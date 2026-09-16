@@ -1,0 +1,20 @@
+## Conversation
+The user requested the Mooncake Store shared-cache routing implementation from an existing plan and then asked for separate logical commits. Shared-cache identity learning must require positive event provenance without changing ordinary GPU routing or legacy event acceptance.
+
+## Actions
+Added explicit eligibility to canonical and raw Stored events, classified native map and tuple metadata before normalization, retained negative decisions across re-encoding, combined provenance conservatively during coalescing, and preserved positive evidence in ordinary RadixTree publisher replay. Updated event producers, tests, benchmarks, and bindings for the new canonical field. Read relevant history and notes during implementation. Final validation of the complete implementation passed 963 router-core tests with 2 ignored, 65 focused wire tests, and 17 focused provenance tests. The affected consumer checks and separate Python Rust bindings check also passed on the complete tree. Individual intermediate commits were not built separately.
+
+## Errors & Mistakes
+Adding the canonical field initially left missing struct fields and exhaustive-pattern updates in consumers. A regression showed that serde's untagged String variant accepted UTF-8 MessagePack bin values, including bytes spelling an allowed LoRA name. An intermediate fix also produced error[E0004] for an uncovered ExtraKeyItem::Binary match arm. All three issues were resolved before the final successful checks.
+
+## Dead Ends
+Strict decoding of newly inspected lora_id and is_eagle fields would reject named-map events that GPU routing previously accepted. The implementation instead decodes those fields tolerantly and withholds only optional shared-cache eligibility. Treating UTF-8 binary values as text for eligibility was also rejected; their previous GPU normalization interpretation remains compatible.
+
+## Hints for Future Agents
+Missing canonical provenance must remain false. Binary metadata must not gain eligibility merely because it spells a recognized text namespace or adapter. Raw re-encoding must retain explicit false. Coalescing requires every contributing event to be eligible. Hash-only reconstructed snapshots, including concurrent radix-tree dumps, cannot establish positive provenance.
+
+## Codebase Discoveries
+Publisher LocalKvIndexer uses ordinary RadixTree. Per-worker and per-DP-rank provenance belongs outside shared node state so one source cannot authorize another source's reconstructed events. No concurrent radix-tree lookup algorithm change was required.
+
+## Open Questions
+Live GPU and Mooncake acceptance remain unverified. The available validation covered parsing, replay, normalization compatibility, and Rust consumers rather than a running vLLM deployment.
