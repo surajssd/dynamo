@@ -1,0 +1,20 @@
+## Conversation
+The user requested configuration and deployment documentation for the optional Mooncake Store shared-cache routing feature, including explicit limits and unverified acceptance gates. They then requested separate logical commits.
+
+## Actions
+Documented the exact vLLM and Mooncake requirements, explicit worker extension and FPM composition, hash and seed contract, event publication, cache prefix and endpoint association, one DP rank per endpoint, supported hybrid layouts, conservative readiness, optional fallback, and best-effort staleness. Updated frontend option and Python stub documentation. Generated ownership files from .github/codeowners/areas.yaml rather than editing CODEOWNERS by hand. Documentation lint scanned 462 files with 0 errors and 8 existing warnings. Generator output was checked during implementation; CONTRIBUTORS remained unchanged.
+
+## Errors & Mistakes
+Fern CLI and pre-commit were unavailable. The ownership validator treated the new directory pattern as stale while its files were still untracked; files were not staged merely to satisfy the earlier validation.
+
+## Dead Ends
+Broad vLLM version compatibility and production GPU acceptance claims would exceed the evidence. Documentation names the exact tested source baseline and reports unavailable acceptance gates explicitly.
+
+## Hints for Future Agents
+Mooncake per-medium eviction and clear semantics require PR #3818, merged at 7e8ca11d87fad66dc75cb40d8ebe2ed95ef15cd1. v0.3.13.post1 is insufficient. Keep configured master, default tenant, publisher identity, and event endpoint as an immutable deployment association, not purported connector-resolved facts. Cold routers need learned GPU identities as well as observed store residency. Do not imply that a later proven hybrid prefix makes all earlier endpoints restartable.
+
+## Codebase Discoveries
+The base shared-cache multiplier remains 0.0, while existing explicit shared-cache env/CLI behavior supplies 0.5 when it is not overridden. Explicit 0, 0.3, and 1 remain accepted. Optional metadata is independent of MDC admission checksum behavior.
+
+## Open Questions
+Initialized pinned-connector, Python runtime/FPM integration, GPU reuse, and live-store acceptance remain unverified in the available environment. Run Fern and the full pre-commit suite where those tools are available.
