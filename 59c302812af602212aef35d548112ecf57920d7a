@@ -1,0 +1,20 @@
+## Conversation
+The user requested optional Mooncake Store routing with a descriptor exported from the initialized pinned vLLM connector. They then requested separate logical commits. The worker extension must remain opt-in and must not change serving behavior when optional metadata is unavailable.
+
+## Actions
+Added the explicit descriptor worker extension, named RPC publication, worker-only FPM composition, rank and descriptor validation, source fingerprint checks, initialized-connector test cases, and an offline oracle generator based on pinned coordinator definitions. The adapter targets vLLM revision 1085b64425a9e6f5ca52876ad32e55fda5665f4e. Focused worker checks passed 52 tests; 4 initialized-connector cases skipped because torch was absent. Scoped Ruff, compileall, and oracle regeneration checks passed. Validation was performed on the complete implementation rather than each intermediate commit.
+
+## Errors & Mistakes
+The runtime-metadata and FPM integration suites could not collect because the available Python environment raised ModuleNotFoundError: dynamo.llm. Existing test_gc_policy.py lint issues were not expanded into unrelated cleanup. Unrelated formatter changes were removed.
+
+## Dead Ends
+General support for arbitrary vLLM versions was rejected because the adapter depends on exact private structure and hash semantics. Public collective_rpc cannot establish all internal data-parallel engine replies with the pinned DPLBAsyncMPClient implementation, so the feature requires one DP rank per endpoint. Default deployments do not auto-install the extension or enable callable serialization.
+
+## Hints for Future Agents
+Use the named dynamo_mooncake_store_descriptor RPC with both collective timeout and asyncio.wait_for. Keep the FPM composite in the worker-only module. Export exact initialized lookup prefixes rather than rebuilding them from assumed topology. Source-pinned AST oracle execution is not initialized-engine acceptance and does not prove tensor registration, transfer, inference, or GPU behavior.
+
+## Codebase Discoveries
+Pinned DPLBAsyncMPClient.call_utility_async broadcasts internally but returns only the first result. ModelRuntimeConfig.set_engine_specific provides the needed metadata channel without new PyO3 fields. Connector getters do not establish every deployment fact about master, tenant, publisher identity, or event endpoint.
+
+## Open Questions
+Run the four initialized-connector cases with torch and the exact pinned vLLM installation. Run Python runtime-metadata and FPM integration with importable dynamo.llm. Live Mooncake transport and GPU acceptance remain unverified.
