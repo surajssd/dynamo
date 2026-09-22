@@ -1,0 +1,22 @@
+## Conversation
+While monitoring PR #14965 after the push, the lightweight `Pre Merge` job `rust-tests (.)` failed. User had asked to keep monitoring the PR; this commit fixes the failure found.
+
+## Actions
+Pulled the failed job log with `gh run view --log-failed`: three tests in lib/kvbm-consolidator/tests/dedup.rs panicked, root cause `kvbm_consolidator::ingress::zmq_subscriber: Failed to deserialize event batch: invalid type: boolean false, expected u64`. Confirmed the same failure on the previous PR head e5c2714 (so pre-existing in the PR, not from the rebase or today's four commits) and that `rust-tests (.)` passes on main. Reproduced locally; `cargo test -p kvbm-consolidator --no-fail-fast` showed 11 failures across dedup, kvbm_bridge, lifecycle, output_contract, zmq_ingress. Traced to tests/common/mod.rs `TestBatch::encode` using `rmp_serde::to_vec` (positional). Changed it to `Serializer::new(&mut buf).with_struct_map()`, matching lib/llm/src/block_manager/kv_consolidator/publisher.rs:245 and lib/kvbm-consolidator/src/egress/zmq_publisher.rs:186. All 51 consolidator tests pass.
+
+## Errors & Mistakes
+`gh api repos/.../actions/jobs/<id>/logs` returned an empty body; `gh run view <run> --job <id> --log` worked.
+
+## Dead Ends
+Considered `skip_serializing_if` on `shared_cache_eligible` so the derived positional array would shrink back to five fields; rejected because the types.rs doc comment deliberately keeps it always serialized so a re-encode cannot erase a negative decision, and the positional alignment was accidental anyway (any Some optional would also have shifted into the lora_id slot).
+
+## Hints for Future Agents
+- `RawKvEvent`'s derived `Serialize` is only valid as a named map. The positional `visit_seq` decoder mirrors vLLM's msgspec `array_like=True` layout: [tag, block_hashes, parent_block_hash, token_ids, block_size, lora_id, medium, lora_name, extra_keys, trailing...]. Never feed the derived serializer's compact output to it.
+- CI's `cargo test --locked --all-targets` has no `--no-fail-fast`, so one failing test binary hides everything alphabetically after it. Here that was the rest of kvbm-consolidator plus kvbm-engine/kernels/logical/physical (none depend on kv-router or llm).
+- Full CI (pr.yaml) has never run on this PR: `Trigger CI Approval Flow` reports AUTHOR_APPROVED=false, so a maintainer must comment `/ok to test <sha>`.
+
+## Codebase Discoveries
+Test binaries run in package-name order; kvbm_* run after all dynamo_*.
+
+## Open Questions
+Whether the reviewer noticed pre-merge was red when approving; the failure predates the review.
