@@ -21,3 +21,6 @@ lib/kvbm-consolidator/src/wire/router_out.rs emits BlockStored with `medium: Non
 
 ## Open Questions
 Whether the reviewer accepts the worker-side map staying always on. Whether the `tokens_hash` check in `restore_dump_provenance` is needed given the Engine Hash Invariant (a HashSet would halve the entry size).
+
+## Rebase conflict resolution (2026-09-23, onto main 6fad666a7)
+f804218070 removed ResolvedApproximatePrimaryPolicy::Disabled and the early `return Ok(Indexer::None)` at overlap_score_credit <= 0 in indexer/mod.rs; our `shared_cache_provenance` gate sat right after it. Kept only our line. Indexing now follows the policy's WorkerInputs::CACHE declaration, which is decided one layer up.
