@@ -1,0 +1,22 @@
+## Conversation
+User asked to split PR #14965 into stacked PRs and create one worktree per layer with `wta`, no pushing. This is the base of layer C (branch suraj/vllm-mooncake-store-contracts): the vLLM worker-side Mooncake Store contract export, carved from branch commit 33182226c4 (C02).
+
+## Actions
+Pre-created the branch at upstream/main a83ba19b4e with --no-track, then `wta` created ~/.herdr/worktrees/dynamo-suraj-vllm-mooncake-store-contracts. Cherry-picked C02 with -S, then removed two files that belong to layer D: lib/llm/src/kv_router/shared_cache/vllm_mooncake_store/oracle.json (1,912 lines, read only by the Rust oracle test in C03) and components/src/dynamo/vllm/tests/generate_mooncake_oracle.py (its generator, imports nothing from the worker runtime). Ran `build_codeowners.py --strict`, which flagged C02's one areas.yaml addition, `lib/llm/src/kv_router/shared_cache/` -> router+kv-memory, as a glob matching no tracked files in this layer. Removed it and regenerated CODEOWNERS; both files are now byte-identical to upstream/main, so layer C carries no ownership change (its Python files fall under the existing components/src/dynamo/vllm claim). Amended with a body noting that nothing in the frontend reads the runtime key yet. Then cherry-picked C06 (dropping its generate_mooncake_oracle.py hunk via the same modify/delete resolution), C13, C15. Verified: 59 Python tests passed, 4 skipped (need torch + pinned vLLM); mypy clean on the new files (two remaining hits are local stub issues identical on plain main); pre-commit on changed files clean.
+
+## Errors & Mistakes
+None in this layer. (Earlier in the session a zsh `set -- $pair` loop word-split incorrectly when copying notes; redone with a function taking two args.)
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+- The `shared_cache/` codeowners glob must be added in layer D (#14965), where the directory has files. If D is rebased after C merges, the areas.yaml hunk in C03/C05 still carries it; verify with `build_codeowners.py --strict`.
+- The oracle generator and fixture now live only on the #14965 branch; when D is trimmed after A/B/C merge, they stay there.
+- Nothing pushed. `git push -u origin suraj/vllm-mooncake-store-contracts` when ready.
+
+## Codebase Discoveries
+`build_codeowners.py --strict` fails on a glob that matches zero tracked files; CI runs it `--changed-only --base <pr-base>` on PRs and full-tree on pushes to main.
+
+## Open Questions
+Whether vLLM backend owners want the worker extension's `vllm_config: Any` class attribute typed more narrowly; kept Any to match the FPM extension precedent.
