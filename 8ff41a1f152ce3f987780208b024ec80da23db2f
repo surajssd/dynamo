@@ -1,0 +1,7 @@
+## Rebase conflict resolution (2026-09-23, onto main 6fad666a7)
+Conflicted with f804218070 "refactor(router): move default worker selection into builtin plugin (#14785)" in model_manager.rs, kv_router.rs, indexer/ingress.rs.
+- KvEventSourceRequirement::derive now takes policy.inputs(); moved the call below policy.prepare() in model_manager.rs and dropped the config arg from should_subscribe() in the MooncakeStore match guard. main's own kv_source_membership gate replaces our cache_required block.
+- ingress.rs: kept main's `cache_required = worker_inputs.contains(CACHE)` and our `let mut indexer` + set_shared_cache.
+- kv_router.rs imports: WorkerSelectionPolicy is cfg(test)-only on main; kept SharedCacheQuery.
+- Test helper make_local_shared_cache_router: builtin default policy makes plain Decode load-only (no WorkerInputs::CACHE), and a CACHE-declaring event-fed router now requires a membership watch. Switched to WorkerType::Aggregated with a KvSourceMembershipCoordinator watch and asserted has_subscription() (was !has_subscription). router_credit_blocks is config-driven (overlap.rs:330), so the asserted numbers did not change. Folded in via fixup; five tests pass.
+- Left alone: validate() still requires overlap_score_credit > 0 for mooncake-store. main removed the zero-credit indexer-disable path, so this is now stricter than strictly needed, but --load-aware (which zeroes credit) also disables shared-cache indexers, so it stays coherent. Flagged to the user rather than changed mid-rebase.
