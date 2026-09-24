@@ -20,3 +20,6 @@ KvRouter::new on main passes `Some(Arc::new(request_leases.clone()))` to the sch
 
 ## Open Questions
 Whether router owners want this as a standalone PR or folded into #14965; standalone was chosen because the leak exists on main today.
+
+## Update 2026-09-24
+Pushed to origin and opened as https://github.com/ai-dynamo/dynamo/pull/15258 (layer A of the #14965 split). The "Nothing is pushed" hint above is stale. Branch now tracks origin/suraj/kv-router-weak-request-lease-observer. The set-upstream step needed the sandbox off because the shared .git/config is read-only inside it.
