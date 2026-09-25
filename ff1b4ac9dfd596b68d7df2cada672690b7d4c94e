@@ -1,0 +1,22 @@
+## Conversation
+While watching the first-ever full-CI run on PR #14965 (head 3c74eeb86), the `dynamo-runtime / mypy` job failed with 12 errors in components/src/dynamo/vllm/mooncake_store_runtime.py. User had asked to watch CI and then plan a stacked-PR split; this fix was needed first.
+
+## Actions
+Reproduced with `MYPYPATH=components/src:lib/bindings/python/src mypy --explicit-package-bases components/src/dynamo/vllm` after `uv pip install mypy==1.18.2` into .venv (pin from container/deps/requirements.test.txt). Fixed: `vllm.__file__` Optional narrowing via explicit raise; `seen: set[int]`; `projection: list[int | None]`; `groups: list[dict[str, Any]]`; `main`/`result` narrowing via explicit `if x is None: raise UnsupportedContract(...)` instead of `_require` (which is not a TypeGuard so mypy cannot narrow through it); class-level `vllm_config: Any` on the mixin. 59 Mooncake Python tests still pass; pre-commit on the file clean.
+
+## Errors & Mistakes
+None.
+
+## Dead Ends
+Considered making `_require` a TypeGuard; not expressible for arbitrary boolean conditions. Considered `assert x is not None`; asserts can be stripped and the repo raises UnsupportedContract elsewhere, so an explicit raise is the behavior-preserving choice.
+
+## Hints for Future Agents
+- Pre-merge (pre-merge.yml) does not run mypy. Only the full `PR` workflow's `dynamo-runtime / mypy` job does, so new Python modules can sit unchecked until the first `/ok to test`. Run the CI invocation above locally before requesting full CI.
+- The remaining local mypy error (`yaml` stubs in omni/stage_worker.py) is a missing `types-PyYAML` in .venv, present on main, and not a CI failure.
+- `test_vllm_unit.py` cannot be collected without `vllm` installed; the three Mooncake test files can.
+
+## Codebase Discoveries
+mypy config in pyproject.toml: `check_untyped_defs = true`, tests excluded via override.
+
+## Open Questions
+Whether to add mypy to pre-commit for components/. Out of scope here.

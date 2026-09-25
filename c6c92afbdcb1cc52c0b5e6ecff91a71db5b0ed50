@@ -1,0 +1,25 @@
+## Conversation
+User asked to split PR #14965 into stacked PRs and to create one worktree per layer with `wta`, without pushing. This is layer A: the request-lease observer cycle fix, carved out of branch commit 49e3f4d8be (C04) on suraj/mooncake-store-shared-cache-routing.
+
+## Actions
+`wta` is a zsh function in ~/code/git/surajssd/dotfiles/configs/aliases/git that creates ~/.herdr/worktrees/<repo>-<sanitized-branch>; it branches from the current HEAD, so the branch was pre-created at upstream/main (`git branch --no-track ... upstream/main`) and wta took its existing-branch path. Cherry-picked C04 with -S; resolved the expected modify/delete on lib/llm/src/discovery/model_manager/mooncake_tests.rs by `git rm` (that 77-line test constructs a MooncakeStoreCache and belongs to layer D). Adapted the regression test in request_lease.rs to main: `tests::tracked_router("replica-lease-observer")` instead of D's `make_local_shared_cache_router(1, None)`, and `router.cancellation_token.cancel(); drop(router);` instead of D's consuming `KvRouter::shutdown()`. Made `tracked_router` pub(super) in kv_router.rs. Rewrote the commit body to describe the cycle as it exists on main (scheduler holds the manager as observer; manager holds SchedulerBookingCleanup from set_scheduler) rather than as a Mooncake regression. Verified: `cargo test -p dynamo-llm --no-default-features --lib -- kv_router::request_lease` 2 passed; fmt clean.
+
+## Errors & Mistakes
+First `git branch` created the branch with `--track` against upstream/main by default; unset it (`git branch --unset-upstream`) so a later `git push` cannot target ai-dynamo/dynamo. Used `--no-track` for B and C.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+- Earlier in the session the regression test was proven meaningful in a throwaway worktree: with `replica_observer()` returning the old strong observer, the `manager.upgrade().is_none()` assertion fails; with the weak one it passes.
+- `drop(router)` is required for the assertion; cancelling the token alone leaves the router's own Arc alive.
+- Nothing is pushed. `git push -u origin suraj/kv-router-weak-request-lease-observer` when ready; the branch has no upstream configured.
+
+## Codebase Discoveries
+KvRouter::new on main passes `Some(Arc::new(request_leases.clone()))` to the scheduler and then calls `request_leases.set_scheduler(selection.scheduler().booking_cleanup())`, which is the second strong edge of the cycle.
+
+## Open Questions
+Whether router owners want this as a standalone PR or folded into #14965; standalone was chosen because the leak exists on main today.
+
+## Update 2026-09-24
+Pushed to origin and opened as https://github.com/ai-dynamo/dynamo/pull/15258 (layer A of the #14965 split). The "Nothing is pushed" hint above is stale. Branch now tracks origin/suraj/kv-router-weak-request-lease-observer. The set-upstream step needed the sandbox off because the shared .git/config is read-only inside it.
