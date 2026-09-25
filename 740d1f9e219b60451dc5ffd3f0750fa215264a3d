@@ -18,3 +18,5 @@ The automatic CI approval workflow completed successfully but did not approve th
 
 ## Open Questions
 The new GitHub pipeline must complete after push. The operator generated-file check and full local test target will run before push because those CI steps were skipped after the lint failure.
+
+Post-commit validation: GOTOOLCHAIN=go1.26.6 make check test passed using the required Python dependencies through uv. The generated tree remained clean. The controller package passed in 42.186 seconds and the webhook validation package passed in 11.745 seconds. This resolves the local validation question above. The new remote pipeline still requires monitoring after push.
