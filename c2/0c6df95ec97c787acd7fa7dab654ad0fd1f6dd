@@ -1,0 +1,20 @@
+## Conversation
+The user asked for PR review comments to be evaluated in chat, then authorized implementation of the valid findings. After the implementation and validation, the user requested a commit and push. Review replies remain the user's responsibility.
+
+## Actions
+Validated frontend sidecar startup probe overrides to require exactly one handler. Expanded the existing test through GenerateBasePodSpec to cover missing and multiple handlers and all four valid handler types. Confirmed that the invalid cases failed before the implementation and that the complete internal/dynamo package passed afterward under Go 1.26.6. Added a 15-second container startup skew guard and a hostname log assertion to the late-NATS Kind test. Updated the curated component API documentation. Ran gofmt, git diff --check, pre-commit checks, docs lint, fern check, and fern docs broken-links. The Kind test passed in 87.05 seconds with zero restarts, worker discovery, and no NATS hostname in frontend logs. The package passed in 94.263 seconds. The validation log is target/nats-retry-validation/late-nats-review.log. Validated the Conventional Commit message, fetched the branch and notes from origin, and confirmed both were aligned before committing.
+
+## Errors & Mistakes
+The first test fixture incorrectly used the old DynamoNamespace field on the v1beta1 shared spec and failed compilation; removing that field corrected the fixture. The regression test then failed as expected with "An error is expected but got nil." for both invalid cases. A direct pre-commit invocation failed with "command not found: pre-commit"; uvx pre-commit succeeded. Fern broken-link validation reported the existing link in pages/recipes/model-recipes/deepseek-v4-pro-0813.mdx to /dynamo/recipes/model-recipes/deepseek-v4-pro. Docs lint reported zero errors and five existing navigation warnings; fern check reported zero errors and three warnings.
+
+## Dead Ends
+Rejected unrelated bot requests for mechanical docstring coverage and a golangci-lint v2 configuration migration. The repository pins a v1 linter. No broad lint or documentation cleanup was needed for these review findings.
+
+## Hints for Future Agents
+Use GOTOOLCHAIN=go1.26.6 for operator validation. Reuse the local production planner image and dedicated Kind kubeconfig documented in the preceding test commit note; the Kind controllers run from the current Go source in process. Keep whole-probe replacement so a user handler cannot merge with the default HTTP handler. Reject timing-only overrides explicitly. Keep the default 120-second NATS timeout and zero-restart assertions when changing the fixture. No GitHub review replies or thread resolutions were posted.
+
+## Codebase Discoveries
+GenerateBasePodSpec propagates mergeFrontendSidecarDefaults errors and returns a nil pod, so the table test covers the public rendering boundary. The component deployment MDX page is curated and can be edited directly; generated API reference output was not changed. Container start skew reduces the earlier process's remaining NATS startup budget even though the outage is measured from the later start.
+
+## Open Questions
+The unrelated DeepSeek recipe link remains broken. The new skip guard was not triggered in the passing Kind run.

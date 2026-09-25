@@ -1,0 +1,20 @@
+## Conversation
+The NATS retry plan also required Kubernetes to allow the frontend to wait for dependencies without a liveness restart. The user requested signed commits after validation.
+
+## Actions
+Added the FrontendStartupProbe runtime gate at 1.6.0, an HTTP /live startup probe with a 300-second allowance, and propagation of the parent runtime version to frontend sidecars. Added gate, hash compatibility, base pod override, and sidecar override coverage. Ran gofmt and the complete operator make test under Go 1.26.6. The full make integration target also passed with images built from this worktree.
+
+## Errors & Mistakes
+The initial sidecar merge combined a user TCP startup probe with the default HTTP handler. The regression test exposed this; the final code deep-copies the complete user startup probe after merging. The installed Go 1.27.1 produced an unrelated webhook expected-error-text failure involving PodCliqueSet versus TopologyConstraint. Re-running with the repository's Go 1.26.6 toolchain passed.
+
+## Dead Ends
+Relying on mergo alone did not preserve whole-probe override semantics.
+
+## Hints for Future Agents
+Use GOTOOLCHAIN=go1.26.6 for this checkout's Go validation. Keep the runtime gate: unknown and older versions must retain their prior defaults to avoid an operator-only rollout. A user probe must replace the complete default handler, including for a colocated frontend.
+
+## Codebase Discoveries
+The frontend HTTP server does not start until distributed runtime initialization completes. Existing frontend liveness can restart the container during the default dependency wait without a startup probe. Controller golden fixtures use 1.4.0-test images and therefore stay unchanged.
+
+## Open Questions
+None
