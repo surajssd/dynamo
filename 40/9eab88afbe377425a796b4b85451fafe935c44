@@ -1,0 +1,20 @@
+## Conversation
+User asked to "fix the necessary code" for the two dynamo-review-agent threads on PR #15260 (layer B of the #14965 split): (1) compressed_radix.rs:51 claims concurrent-tree dumps mark every block ineligible and replay loses shared-cache learning; (2) zmq_wire/tests.rs:415 suggests one malformed value per provenance field.
+
+## Actions
+Traced dump consumers on this branch and on origin/suraj/mooncake-store-shared-cache-routing (layer D). Frontend `Indexer::dump_events` callers: Python binding `KvRouter.dump_events` (used only by tests/router/common.py for state comparison) and standalone indexer `/dump` for peer recovery (no shared cache there). `serve_indexer` (lib/llm/src/kv_router/indexer/remote.rs) serves queries only, not dumps. The Mooncake observer's `observe_stored` sees live events and worker TreeDump replay; TreeDump comes from LocalKvIndexer, which is a single-threaded RadixTree with provenance always on. Concluded thread 1 is a true fact with unreachable impact, so added comments at both concurrent dump sites instead of adding a provenance map to CRTC. For thread 2, kept the table (values differ in serde type: negative int, string, bool, array, map) and added a comment explaining why. cargo fmt clean; cargo test -p dynamo-kv-router 1072 passed.
+
+## Errors & Mistakes
+First commit included a `Co-Authored-By: Claude` trailer from the harness attribution reminder, which violates the user's global no-AI-attribution rule. Amended it away; the first amend duplicated the Signed-off-by line, fixed with a second amend.
+
+## Dead Ends
+Considered adding provenance tracking to ConcurrentRadixTreeCompressed; rejected because no consumer reads a frontend dump for shared-cache learning and it would be a sizeable change to the concurrent tree.
+
+## Hints for Future Agents
+If a future change replays a frontend (router_event_threads > 1, the default of 4) dump into a shared-cache observer, the comment in compressed_radix::dump_event becomes false and CRTC needs a provenance map.
+
+## Codebase Discoveries
+`router_event_threads` defaults to 4 (lib/kv-router/src/scheduling/config.rs), so default frontends use ConcurrentRadixTreeCompressed, not RadixTree.
+
+## Open Questions
+Whether the reviewer accepts a comment instead of provenance in concurrent trees.
