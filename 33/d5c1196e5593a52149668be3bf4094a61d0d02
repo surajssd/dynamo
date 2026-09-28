@@ -1,0 +1,26 @@
+## Conversation
+The user requested router-owned Mooncake cache lifetime safety as part of the implementation, then asked for separate logical commits. A constructor-failure regression exposed an existing ownership cycle that prevented that guarantee.
+
+## Actions
+Replaced the scheduler-owned strong request-lease observer with a wrapper holding Weak<RequestLeaseManagerInner>. Router and active request leases continue to own the manager strongly. Added live admission, progress, completion, and post-manager callback coverage, plus an actual failed-router-constructor release regression for both local indexers. The constructor test passed in 0.04 seconds after reproducing the failure; the live-callback test passed in 0.01 seconds. The final integrated suite passed 189 tests, including request-lease, sequence, scheduler, and construction-failure coverage. Formatting and whitespace checks passed.
+
+Rebase on 2026-09-17: Replayed this fix as 33d5c1196e5593a52149668be3bf4094a61d0d02. EmbeddedSelection::start now receives Some(request_leases.replica_observer()). Retained upstream RequestLeaseManager::set_scheduler and its ordering before replica ingress starts. Ported the callback regression to selection.scheduler() and the direct weak observer because upstream removed DeferredReplicaRequestLeaseObserver. The live callback and router shutdown test passed in the final frontend suite. The failed-construction cleanup regression passed for both local indexers.
+
+## Errors & Mistakes
+The constructor test initially timed out after 2.07 seconds. Diagnostics showed threads=1, cache=1, watch=1, admitted=1, configs=2 while waiting for release. The initial assumption that the existing constructor cancellation guard was sufficient did not account for an actor retaining its own command sender. Commit preparation also rejected an overlong body line with body's lines must not be longer than 100 characters [body-max-line-length]; the shorter message passed the validator.
+
+## Dead Ends
+Cancelling only the new cache tasks cannot release a pre-existing scheduler actor reference cycle. No scheduler queue, scoring, accounting, or cleanup algorithm change was needed; weakening only the installed observer ownership resolves the cycle while preserving live callbacks.
+
+## Hints for Future Agents
+The scheduler actor owns slots and their installed observer. A strong lease-manager observer leads through SchedulerBookingCleanup back to a strong admission command sender. Keep this observer weak. Deferred admission callbacks must still replay when the observer is installed, and callbacks after manager destruction must be harmless.
+
+Rebase on 2026-09-17: Upstream constructs RuntimeIngress before the scheduler. Missing source membership now fails before scheduler construction, so the preserved failed-construction fixture tests early cache/watch cleanup, not post-scheduler failure. The separate callback/shutdown test checks weak-manager release after a constructed router shuts down. Do not cite the early-construction fixture as evidence for a post-scheduler failure path.
+
+## Codebase Discoveries
+The failed-constructor path creates both the local indexer and scheduler before rejecting missing source membership. That path exposed retention of the passive cache and watch receivers through the scheduler actor, not through a started Mooncake subscriber.
+
+Rebase on 2026-09-17: The historical description above reflects the pre-rebase constructor order. The current API builds the lease manager first, installs its weak observer during EmbeddedSelection construction, sets scheduler cleanup, and only then starts replica ingress. Deferred observer buffering is no longer part of this architecture.
+
+## Open Questions
+None.
