@@ -18,3 +18,6 @@ If a future change replays a frontend (router_event_threads > 1, the default of 
 
 ## Open Questions
 Whether the reviewer accepts a comment instead of provenance in concurrent trees.
+
+## Rebase conflict resolution (2026-09-28, onto main f5d3353e21)
+Upstream 28e5d68ab3 "refactor(kv-router): remove the uncompressed ConcurrentRadixTree (#15304)" deleted lib/kv-router/src/indexer/concurrent_radix_tree.rs. This commit touched that file (a shared_cache_eligible initializer or a pointer comment), so the modify/delete conflict was resolved by accepting the deletion. The only concurrent tree left is ConcurrentRadixTreeCompressed, whose dump comment in compressed_radix.rs still explains the false eligibility. After the rebase: kv-router 1026 passed (was 1072; the drop is the removed tree tests), kvbm-consolidator 51, llm kv_router::publisher + kv_router::indexer 172, mocker 213, fmt clean. Sandbox gotcha: $TMPDIR/cargo-home had 379 half-extracted crate dirs with no Cargo.toml; deleting them let cargo re-extract.
