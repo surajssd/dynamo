@@ -41,3 +41,26 @@ No source adaptation was necessary despite upstream changes in Responses convers
 
 ## Open Questions
 None for the local rebase. The GitHub PR has not been updated because publication was outside the authorized scope.
+
+## Conversation
+Continuation of the user's request to rebase PR #15153 onto main. No publication was requested.
+
+## Actions
+The shared upstream/main ref advanced by two commits during the first validation run. Rebased the same six commits again onto the pinned main commit 631d7c1f5e4f851b8185f187790845a1fdf6d3a8 with GPG signing and notes rewriting enabled. The final head is 2fc1d33230. Both rebases were conflict-free. Verified all six signatures, unchanged commit messages, and copied notes. The complete binary-capable PR diff is byte-for-byte identical to the already inspected diff from the first rebase. Human-authored changes retain their existing scope. The three generated Cargo.lock changes also remain unchanged. The working tree is clean, with no untracked files, and upstream/main is an ancestor of HEAD.
+
+Repeated cargo fmt --all -- --check and git diff --check successfully. On the final head, cargo test -p dynamo-llm --no-default-features --locked --lib --test frontend_protocol_validation_http strict -- --quiet passed 21 library tests and both HTTP regressions. The earlier 521-test protocol run passed on the first rebased head; the two additional upstream commits only changed KV routing code and did not overlap any PR file. Nothing was pushed.
+
+## Errors & Mistakes
+The first final ancestry check returned exit 1 because another checkout had advanced the shared upstream/main ref. Read the reflog, identified the two new commits, and rebased onto their pinned tip. No test failures occurred.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+Git remote-tracking refs are shared by all worktrees. Pin the main SHA used for a rebase and validation, and check for concurrent updates before handoff. The final base is 631d7c1f5e4f851b8185f187790845a1fdf6d3a8; the original remote PR head and backup ref remain as recorded above. Existing commit messages, notes, and DCO sign-offs survived both rebases.
+
+## Codebase Discoveries
+None beyond the unchanged PR diff and successful native macOS HTTP regressions.
+
+## Open Questions
+None for the local rebase. Publication remains outside the authorized scope.
