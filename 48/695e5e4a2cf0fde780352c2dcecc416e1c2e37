@@ -6,3 +6,34 @@ This commit is the base of layer B (branch suraj/kv-router-shared-cache-eligibil
 
 ## Rebase conflict resolution (2026-09-28, onto main f5d3353e21)
 Upstream 28e5d68ab3 "refactor(kv-router): remove the uncompressed ConcurrentRadixTree (#15304)" deleted lib/kv-router/src/indexer/concurrent_radix_tree.rs. This commit touched that file (a shared_cache_eligible initializer or a pointer comment), so the modify/delete conflict was resolved by accepting the deletion. The only concurrent tree left is ConcurrentRadixTreeCompressed, whose dump comment in compressed_radix.rs still explains the false eligibility. After the rebase: kv-router 1026 passed (was 1072; the drop is the removed tree tests), kvbm-consolidator 51, llm kv_router::publisher + kv_router::indexer 172, mocker 213, fmt clean. Sandbox gotcha: $TMPDIR/cargo-home had 379 half-extracted crate dirs with no Cargo.toml; deleting them let cargo re-extract.
+
+# Rebase on 2026-10-01
+
+## Conversation
+The user requested rebasing PR #15260, suraj/kv-router-shared-cache-eligibility, on current main. The user prohibits posting to GitHub, so this work remained local.
+
+## Actions
+Fetched upstream/main and the origin PR branch. The initial working tree was clean and HEAD matched the remote PR head. Rebased seven commits from f5d3353e2167bb0f0d729085eb5bc9183bf4b222 onto 631d7c1f5e4f851b8185f187790845a1fdf6d3a8 with GPG signing and DCO sign-offs. This commit was rewritten from da8d715c351f87067123e73ba37f3665196a3419 to 48695e5e4a2cf0fde780352c2dcecc416e1c2e37; its message is unchanged. Preserved existing notes and the old tip at refs/backup/rebase-kv-router-shared-cache-eligibility-82069885ed.
+
+This commit conflicted in lib/kv-router/src/indexer/radix_tree.rs. Kept main's borrowed iteration over outcome.stale_hashes and its eagerly_removed vector, and inserted the PR's provenance.remove(&stale_hash) into that loop. Both the upstream removal optimization and shared-cache provenance cleanup remain intact.
+
+Ran cargo fmt -p dynamo-kv-router during conflict resolution. Verified cargo fmt --all --check, git diff --check, range-diff, clean tracked and untracked state, and all seven commit signatures. Inspected the complete PR diff in path groups. The PR still changes 60 files with 976 additions and 38 deletions; no generated files changed.
+
+Validation: cargo test --locked -p dynamo-kv-router -p kvbm-consolidator --quiet passed (1042 KV-router unit tests, one KV-router integration test, and 51 consolidator tests; ignored tests remained ignored). The full LLM publisher/indexer run with --no-default-features and --test-threads=1 passed all 172 tests.
+
+## Errors & Mistakes
+The initial parallel LLM run passed 170 tests and timed out in event_plane_publisher_roundtrips_batch_through_production_codec with "subscriber should receive an event batch: Elapsed(())" and direct_zmq_multi_node_replacement_isolated_by_global_rank with "distinct state for all eight global ranks was not indexed: Elapsed(())". Both passed when run together with --test-threads=1, and the complete 172-test publisher/indexer selection then passed serially. No source changes were made for these timeouts.
+
+The macOS build warned about unused join_reuseport in lib/runtime/src/pipeline/network/quic_response.rs:844; that file is identical to upstream/main. The linker also warned that __eh_frame exceeds 16MB for compact unwind offsets.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+The old tip is retained at refs/backup/rebase-kv-router-shared-cache-eligibility-82069885ed. Existing historical notes are preserved above this entry when present. The branch and notes have not been pushed. The GitHub PR still points at the old head until the user publishes the rebase.
+
+## Codebase Discoveries
+Upstream d11bfffc6d changed radix-tree removal to collect eagerly removed hashes in a vector and build its hash set only on a lookup miss. The stale-hash loop must borrow outcome.stale_hashes so the following extend_from_slice can still use it. Shared-cache provenance cleanup belongs inside that same loop.
+
+## Open Questions
+The cause of the two initial parallel ZMQ test timeouts was not established. Investigating parallel test stability is outside this rebase; the isolated rerun and full serial selection passed.
