@@ -1,0 +1,20 @@
+## Conversation
+Same unattended monitor-and-fix loop for PR #15153. This commit answers the two open CodeRabbit threads (r4067541778: oneOf and nesting depth; r4067541803: array keywords) that dynamo-review-agent re-reported as still present.
+
+## Actions
+Re-read the OpenAI Structured Outputs guide (developers.openai.com/api/docs/guides/structured-outputs.md, fetched 2026-09-22): supported types list anyOf but not oneOf; supported array keywords are only minItems and maxItems; composition exclusions are allOf, not, dependentRequired, dependentSchemas, if, then, else; "A schema may have up to 5000 object properties total, with up to 10 levels of nesting." Confirmed the live oneOf rejection text "'oneOf' is not permitted" from community.openai.com/t/966047 and openai/openai-node#1709. Added oneOf, uniqueItems, contains, minContains, maxContains, unevaluatedItems to UNSUPPORTED_KEYWORDS. Added a depth counter to the BFS queue: only object schemas (type object, type array containing object, or properties/patternProperties) increment depth; an object at depth > 10 is rejected. Replaced traversal_has_no_schema_depth_limit with object_nesting_depth (512 nested items still accepted; 10 nested objects accepted; 11 rejected). Updated structural-tag.md accordingly. 16 walker tests, 513 protocols::openai tests, fmt, clippy -D warnings, docs lint, and git diff --check pass.
+
+## Errors & Mistakes
+None.
+
+## Dead Ends
+The prior session declined these changes as out of plan scope and documented them as limits instead; the reviewer bot re-flagged them. Evidence for oneOf and the array keywords is now documented, so the bounded-scope argument no longer held.
+
+## Hints for Future Agents
+Depth semantics: root is depth 0 and not counted; every object schema adds one level for its children regardless of the keyword that reached it; $defs entries start at depth 1; recursion via $ref adds nothing because only literal nesting is walked. propertyNames, unevaluatedProperties, prefixItems, additionalItems, contentSchema, and dependencies are still traversed but not rejected; OpenAI does not list them either way.
+
+## Codebase Discoveries
+None beyond the above.
+
+## Open Questions
+The dynamo-review-agent question about double validation on /v1/responses (pre-filter pass plus chat validate) is unanswered in code; measurements exist in the prior commit note on a8f6f1026b (now c6731401be after rebase).
