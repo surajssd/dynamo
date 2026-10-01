@@ -1,0 +1,20 @@
+## Conversation
+The user asked to act on new feedback and rebase onto current main. dynamo-review-agent had posted a third review on b6c25ff402 with three inline comments: bound the function name in the Responses strict-schema diagnostic, and drop two redundant rows from the HTTP acceptance matrix.
+
+## Actions
+Rebased onto upstream/main 00f0f591c0 (nine commits; overlap only in lockfiles, preprocessor.rs, and two agents docs pages; clean merge; all three lockfiles pass cargo metadata --locked). Added bounded_name in strict_schema.rs: names longer than validate::MAX_FUNCTION_NAME_LENGTH (128) are truncated by chars and suffixed with "...", and validate_strict_function uses it in the diagnostic. Added walker test oversized_function_names_are_bounded_in_diagnostics covering the truncated and the exactly-at-limit cases. Removed the Some(Value::Null) strictness row and the "parameters": null row from strict_tool_schema_acceptance_preserves_submitted_functions, and dropped the now-dead .filter(|v| !v.is_null()) from its parameters assertion. Verified 522 protocols::openai tests, clippy -D warnings on lib and test targets, fmt, docs lint, diff --check.
+
+## Errors & Mistakes
+None in this round.
+
+## Dead Ends
+Considered validating the name length inside validate_strict_function instead of truncating, but that would duplicate the Chat name rule with a different error shape and change precedence for Chat, where name validation already runs first. Truncation keeps the diagnostic stable and leaves the length rule in one place.
+
+## Hints for Future Agents
+Chat still rejects oversized names before the strict check, so the truncation only ever shows on the Responses path (and for dynamic Kimi tools, which also go through validate_tools after normalization). The exact-message assertions elsewhere use short names and are unaffected. The HTTP acceptance test still covers omitted strict, strict false, strict true with a valid schema, and strict true with omitted parameters.
+
+## Codebase Discoveries
+MAX_FUNCTION_NAME_LENGTH is pub in validate.rs and is a byte length there; bounded_name counts chars so a multi-byte name is never split mid-character.
+
+## Open Questions
+None.
