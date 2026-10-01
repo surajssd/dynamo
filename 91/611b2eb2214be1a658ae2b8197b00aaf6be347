@@ -1,0 +1,20 @@
+## Conversation
+The user requested the plan's Kind regression test. After an initial report that it compiled but lacked images, the user explicitly asked to resolve the image setup and run the test. The user then requested commits.
+
+## Actions
+Added the real-pod test without BlockWorkloads. Built ARM64 dynamo-operator:nats-retry and dynamo-planner:nats-retry from this worktree, loaded them into the dedicated dynamo-clustertest-v136 Kind cluster, and ran the targeted test followed by the full make integration target under Go 1.26.6. The targeted test passed in 90.03 seconds; the same test passed in 84.64 seconds in the full suite. The controller cluster-test package passed in 229.577 seconds, including deployment, Grove, LWS profiler jobs, manifest tests, and the Grove scale-subresource test. Both original pods remained unready with zero restarts during the 60-second NATS outage, then became Ready. The frontend models API listed mock-llama. The captured frontend log showed recovery on attempt 15. Logs are local ignored artifacts under target/nats-retry-validation/.
+
+## Errors & Mistakes
+The first setup attempt reported "Error: DYNAMO_CLUSTERTEST_PROFILER_IMAGE must name a locally available production planner image". Missing local images were resolved by building them. The CUDA base-image layer download stalled at 2.77 GB of 2.97 GB. Cancelling the stalled build, explicitly pulling the base image, and restarting the build resolved it.
+
+## Dead Ends
+Stopping at test compilation left the requested validation incomplete. The final validation used actual images built from the changed source.
+
+## Hints for Future Agents
+Render the planner Dockerfile with container/render.py --framework dynamo --target planner --platform linux/arm64 --cuda-version 13.0. The successful local planner build used CARGO_BUILD_JOBS=6, ENABLE_KVBM=false, ENABLE_GPU_MEMORY_SERVICE=false, and USE_SCCACHE=false; the planner still installed the real runtime wheel with the production runtime features. Build the operator from deploy/operator with --build-context compliance=../../container/compliance. The dedicated kubeconfig is deploy/operator/bin/clustertest.kubeconfig. Set DYNAMO_CLUSTERTEST_PROFILER_IMAGE=dynamo-planner:nats-retry and DYNAMO_CLUSTERTEST_OPERATOR_IMAGE=dynamo-operator:nats-retry for make integration. Docker caches and both local images remain available. No images or commits were pushed.
+
+## Codebase Discoveries
+The planner image supplies the frontend, mocker, and nats-server binary, so all three test processes can use one image. Mount identical local model metadata paths in both pods because the worker publishes absolute paths. Disable ANSI logging in the fixture for stable structured-field assertions. The existing cluster harness collects diagnostics on failure and deletes test namespaces.
+
+## Open Questions
+None

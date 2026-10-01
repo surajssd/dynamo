@@ -1,0 +1,20 @@
+## Conversation
+The implementation plan requested runtime configuration and Kubernetes probe documentation. The user requested commits after the runtime and cluster validation passed.
+
+## Actions
+Updated the runtime configuration, observability guide, component deployment reference, and operator documentation footer. Ran make generate-api-docs to regenerate both API reference outputs. Ran the documentation linter, Fern checks, and pre-commit checks. Generated ignored Python and Rust API pages before running Fern 5.80.2 validation.
+
+## Errors & Mistakes
+The documentation linter reported zero errors and eight existing warnings. Fern broken-link validation reported the existing link in pages/recipes/model-recipes/deepseek-v4-pro-0813.mdx to /dynamo/recipes/model-recipes/deepseek-v4-pro. That unrelated page was left unchanged.
+
+## Dead Ends
+None
+
+## Hints for Future Agents
+Edit deploy/operator/docs/footer.md and regenerate the API reference pages; do not hand-edit generated output. The frontend startup allowance must cover sequential NATS and etcd waits plus initialization. Successful NATS connection alone does not imply process readiness.
+
+## Codebase Discoveries
+The old operator footer described frontend liveness and readiness probes that no longer matched the implementation. The final tables reflect the existing HTTP /live and /health probes plus the new gated startup probe.
+
+## Open Questions
+The pre-existing DeepSeek recipe link remains outside this change.
