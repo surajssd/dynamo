@@ -51,7 +51,7 @@ The shared upstream/main ref advanced by two commits during the first validation
 Repeated cargo fmt --all -- --check and git diff --check successfully. On the final head, cargo test -p dynamo-llm --no-default-features --locked --lib --test frontend_protocol_validation_http strict -- --quiet passed 21 library tests and both HTTP regressions. The earlier 521-test protocol run passed on the first rebased head; the two additional upstream commits only changed KV routing code and did not overlap any PR file. Nothing was pushed.
 
 ## Errors & Mistakes
-The first final ancestry check returned exit 1 because another checkout had advanced the shared upstream/main ref. Read the reflog, identified the two new commits, and rebased onto their pinned tip. No test failures occurred.
+The first final ancestry check returned exit 1 because another checkout had advanced the shared upstream/main ref. Read the reflog, identified the two new commits, and rebased onto their pinned tip. No test failures occurred. A final audit command incorrectly passed two revisions to git rev-parse --short=10 and returned fatal: Needed a single revision. Repeated the audit with separate revision queries; every check passed.
 
 ## Dead Ends
 None.
