@@ -64,3 +64,30 @@ None beyond the unchanged PR diff and successful native macOS HTTP regressions.
 
 ## Open Questions
 None for the local rebase. Publication remains outside the authorized scope.
+
+## Conversation
+On 2026-10-02, the user again asked to rebase the current PR onto main. The standing instruction prohibits GitHub publication, so this task remained local.
+
+## Actions
+Confirmed a clean fix/strict-tool-schema-validation branch at 2fc1d33230644858ced6f2bb65df025266f5829f, matching its origin tracking ref. Fetched upstream/main and pinned 21458396bc4932c50210b87b7c835e756b738c22, which adds 30 commits to the previous base. Saved the starting head at refs/codex-backups/strict-schema-pre-rebase-20261002-2fc1d33230. Rebased all six commits with --gpg-sign and notes rewriting enabled. The final head is fd3ca16dbf.
+
+Resolved the Responses adapter conflict caused by upstream f67423f6ad (namespace-aware tool names). Kept the new ToolNameMap argument and names-aware conversion, retained strict-schema validation before allowed_tools filtering, and preserved the upstream namespace round-trip tests and their existing comments. Updated the two PR tests to construct ToolNameMap and pass it to convert_tools_and_choice. Ran cargo fmt --all before continuing the rebase. All six commit messages, DCO sign-offs, and existing notes were preserved, and all signatures validate.
+
+Audited the complete PR patch by comparing every changed file with the previously inspected PR diff and directly inspecting the Responses diff and range-diff. Only the Responses test call adjustments changed the patch payload. The full PR has 13 files, 1290 additions, and 9 deletions. Human-authored changes retain the existing strict-schema scope. The three generated Cargo.lock files retain their existing one-line additions; no generated conflict resolution or regeneration was necessary. The working tree is clean and upstream/main is an ancestor of HEAD.
+
+Validation passed on macOS with Homebrew rustc and cargo 1.99.0: cargo fmt --all; git diff --check; cargo metadata --locked --format-version 1 --no-deps for the root, Python bindings, and KVBM bindings manifests; cargo test -p dynamo-llm --no-default-features --locked --lib protocols::openai -- --quiet (525 tests); cargo test -p dynamo-llm --no-default-features --locked --test frontend_protocol_validation_http -- --quiet (12 tests). No push or GitHub write was performed.
+
+## Errors & Mistakes
+The first commit stopped with CONFLICT (content): Merge conflict in lib/llm/src/protocols/openai/responses/mod.rs. The two conflict hunks were the conversion call and the insertion point beside an upstream-renamed namespace test. Both were resolved while retaining the upstream behavior. No build or test failures occurred. Rust 1.99.0 emitted Atomic::fetch_update deprecation warnings in unchanged code, the known unused join_reuseport warning, a macOS linker unwind-table warning, and a dependency future-compatibility warning.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+convert_tools_and_choice now requires &ToolNameMap. The strict-schema hook still belongs after namespace-aware conversion and before tool filtering. Keep the namespace collision round-trip tests from main. The protocol and HTTP suites ran successfully with --no-default-features. The initial branch head and notes remain accessible through the backup ref; publication must include commit notes if subsequently authorized.
+
+## Codebase Discoveries
+Upstream f67423f6ad replaces ambiguous namespace-name rejection with reversible aliases. The PR only needed its two direct conversion calls in tests adapted to that new API.
+
+## Open Questions
+None for the local rebase. The rebased branch has not been pushed.
