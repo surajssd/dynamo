@@ -1,0 +1,28 @@
+## Conversation
+The user asked to rebase this branch onto main and address the review from sttts on ai-dynamo/dynamo PR #15581. The user then explicitly authorized a signed commit and push, with no GitHub comments. Do not reply to review threads or post comments on the user's behalf.
+
+## Actions
+Rebased the original PR onto upstream/main def3b79b15c266805540a678dd400aeb6ccada1d. The rebased original commit is 4204b897ec022a8dbbc78d3ec84f1901c047d608, with its original and follow-up notes preserved. Resolved graph.go against main's relocation of shared environment injection into component_common.go; retained runtime-version propagation and complete startup-probe replacement.
+
+Addressed both sttts review comments. Added generated CEL rules through deploy/operator/Makefile to reject startup probes with zero or multiple handlers in both served DGD and DCD API versions, including role templates. Removed duplicate renderer validation and its invalid-handler test cases. Added 12 real API-server admission cases across the existing DGD and DCD envtest suites. Changed excessive fixture startup skew from a skip to a test failure while preserving the full 60-second dependency outage and default connection timeouts. Updated the curated DCD API documentation. Regenerated the two CRDs through make manifests.
+
+Validation was completed before committing. All eight invalid-probe regression cases failed against the old schema, then all 12 new cases passed with the generated rules. The full webhook validation package passed. The internal/dynamo and internal/features/runtime packages passed. The pinned golangci-lint v1.62.2 checks passed. All pre-commit hooks for the complete PR passed through uvx. The documentation linter reported zero errors and six pre-existing warnings. Kubernetes API documentation generation check passed. Repeated CRD generation produced the same diff. TestClusterFrontendDependencyStartup passed against Kind in 201.06 seconds, with both full 60-second outages, same-pod recovery, zero restarts, readiness, model discovery, and retry logs. Ran gofmt and git diff --check. Audited the complete PR diff against its merge base and verified that no untracked files were present.
+
+For this commit, rechecked the remote branch SHA, merged remote commit notes without conflicts, validated the commit message with the conventional-commits skill validator, staged exactly the nine reviewed files, and committed with git commit -s -S. The remote branch was still 031dd95d0000a1bb1cf133ab909fae8ed62137bd before the push. The authorized push uses that explicit force-with-lease value and includes refs/notes/commits atomically. No GitHub comments were posted.
+
+## Errors & Mistakes
+An initial list/filter CEL rule exceeded Kubernetes' estimated validation cost by 8.7 times; it was replaced with container-scoped arithmetic rules. An intermediate yq selector accessed arrays as mappings; mapping filters corrected it. An initial gofmt invocation used paths relative to the wrong directory and was corrected. An accidental invisible character in a test identifier was removed before successful compilation. Global golangci-lint v2 was incompatible with the repository's legacy configuration; the pinned v1.62.2 tool passed. pre-commit was not directly on PATH; uvx pre-commit passed. A zsh glob for workflow paths had no matches and was replaced by an rg search. The global kubeconfig did not contain the existing Kind context; an explicit temporary kubeconfig export worked. Automatic approval review rejected an rm -f cleanup; single-file unlink succeeded.
+
+During push preparation, the first local ancestry check for remote notes failed with "fatal: Not a valid commit name 4550216a3d29688168ed35cce3a3c7a76651dbac" because that remote object had not been fetched. Fetched notes into refs/remotes/origin/notes/commits and merged them into local notes successfully.
+
+## Dead Ends
+Probe-local boolean list/filter CEL validation was abandoned because it exceeded the admission cost budget. The final container-scoped arithmetic expression preserves the API shape and avoids introducing unrelated bounds. Global golangci-lint v2 was not a valid substitute for the pinned repository tool.
+
+## Hints for Future Agents
+Use GOTOOLCHAIN=go1.26.6 for this operator work on the current machine. The shared pinned linter is /Users/suraj/.herdr/worktrees/dynamo/nats-retry/deploy/operator/bin/golangci-lint-v1.62.2. Envtest assets are under /Users/suraj/.herdr/worktrees/dynamo/nats-retry/deploy/operator/bin/k8s/1.30.0-darwin-arm64. Use uvx pre-commit if pre-commit is absent from PATH. Regenerate CRDs through the Makefile; do not hand-edit generated rules. The Kind test requires an explicitly exported kubeconfig on this machine. Read the notes on 4204b897ec for the original PR implementation and rebase details.
+
+## Codebase Discoveries
+The manifests target injects nested CEL validation rules after controller-gen. Appending these rules preserves existing validations. Both served API versions and role-template containers need startup-probe validation. Main moved shared environment injection to component_common.go and removed the operatorConfig parameter from mergeFrontendSidecarDefaults. The fixture's startup-skew limit protects meaningful dependency-outage coverage; silently skipping it can hide loss of the entire outage/recovery check.
+
+## Open Questions
+None. Both review requests are implemented and validated. Review-thread replies are intentionally left to the user.
