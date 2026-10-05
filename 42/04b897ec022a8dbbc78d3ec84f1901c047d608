@@ -18,3 +18,24 @@ The planner image includes both /usr/local/bin/nats-server and /usr/local/bin/et
 
 ## Open Questions
 All validation and the PR description are complete. The operator follow-up is now PR 15581 and CI is running. Runtime PR 15269 must land before the NATS integration case can pass with newly built main images. The unrelated DeepSeek recipe link remains deferred.
+
+## Conversation
+The user asked to rebase frontend-dependency-startup-probe onto main. The request was for a local rebase; no push or public post was requested.
+
+## Actions
+Fetched upstream/main at def3b79b15c266805540a678dd400aeb6ccada1d. Rebased the single commit 031dd95d0000a1bb1cf133ab909fae8ed62137bd with GPG signing and preserved its original message and DCO sign-off. Resolved one conflict in deploy/operator/internal/dynamo/graph.go by preserving main's sidecar infrastructure context and environment handling while retaining this branch's RuntimeVersion propagation and complete startup probe validation and replacement. Ran gofmt on graph.go. With GOTOOLCHAIN=go1.26.6, internal/dynamo and internal/features/runtime tests passed; the clustertest-tagged controller package compiled with -run '^$'. Regenerated both Kubernetes API references using make generate-api-docs; the merged outputs were already current. Docs lint passed with zero errors and six existing warnings, gen_kubernetes_api.py --check passed, and git diff --cached --check passed. Inspected the entire staged diff against the new base and confirmed the original 12-file scope: 566 additions and 51 deletions, with two generated reference files. Preserved the original commit note on the rebased commit and appended this rebase record.
+
+## Errors & Mistakes
+The initial rebase stopped with 'CONFLICT (content): Merge conflict in deploy/operator/internal/dynamo/graph.go'. The conflict involved main's removal of AddStandardEnvVars and AddTransportTLSEnvVars from mergeFrontendSidecarDefaults. Keeping those stale calls would reference the removed operatorConfig parameter. command -v fern found no globally installed Fern executable. The API generator emitted existing max-recursion-depth warnings; docs lint reported five existing navigation warnings and the generated raw Markdown reference's existing H1 warning.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+Main's commit eaf61940ab moved shared environment injection to component_common.go and removed the operatorConfig argument from mergeFrontendSidecarDefaults. Keep parentContext.Infrastructure when propagating parentContext.RuntimeVersion. The system Go is 1.27.1; use GOTOOLCHAIN=go1.26.6 for this operator. No cluster integration run was performed during this rebase; the prior commit note records the earlier successful Kind run. No push was performed.
+
+## Codebase Discoveries
+The frontend sidecar tests exercise GenerateBasePodSpec and continue to pass with main's native-sidecar refactor. Both generated Kubernetes API references remain byte-for-byte equal to the automatic merge after regeneration.
+
+## Open Questions
+The rewritten branch is local. Updating its remote branch would require a force-with-lease push and pushing refs/notes/commits. No new follow-up work was introduced by the rebase.
