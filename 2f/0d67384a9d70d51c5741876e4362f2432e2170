@@ -28,3 +28,32 @@ Upstream d11bfffc6d changed radix-tree removal to collect eagerly removed hashes
 
 ## Open Questions
 The cause of the two initial parallel ZMQ test timeouts was not established. Investigating parallel test stability is outside this rebase; the isolated rerun and full serial selection passed.
+
+# Rebase on 2026-10-06
+
+## Conversation
+The user requested rebasing PR #15260 on current main, then said to try again after Git metadata access was restored. The earlier authorization to push this PR branch remains in effect.
+
+## Actions
+Fetched upstream/main at 7d82c10d9ea050de5147d94894b99d664d60d37c and origin's PR head at d051b1b6c324b4ec9d3aa26b7f5731e975a6bffc. Preserved the old tip at refs/backup/rebase-kv-router-shared-cache-eligibility-d051b1b6c3. Replayed all nine commits with git rebase --gpg-sign --signoff --empty=keep and notes rewriting enabled. This commit changed from e396f8f4e3f325eb3bb491d3fd33745e80e813d8 to 2f0d67384a9d70d51c5741876e4362f2432e2170. The rebase had no conflicts, no manual source edits, and no changes to the original patches or commit messages. Existing notes were preserved before this entry was appended.
+
+Verified all nine local signatures, exact old/new commit messages and notes, range-diff equality for all patches, cargo fmt --all --check, git diff --check, and a clean working tree including untracked files. Inspected the complete PR diff against the new base: 60 files, 998 additions, 54 deletions, with no generated artifacts changed.
+
+Validation passed: cargo test --locked -p dynamo-kv-router -p kvbm-consolidator --quiet (1052 KV-router unit tests, one KV-router integration test, 51 consolidator tests; ignored tests remained ignored). The LLM publisher/indexer selection with --no-default-features and --test-threads=1 passed all 173 tests after the retries detailed below. Origin notes were fetched into FETCH_HEAD and merged without conflict. The branch and notes will be pushed together atomically with an explicit force-with-lease expecting d051b1b6c324b4ec9d3aa26b7f5731e975a6bffc.
+
+## Errors & Mistakes
+The first serial LLM publisher/indexer run passed 171 tests and timed out in direct_zmq_multi_node_replacement_isolated_by_global_rank with "distinct state for all eight global ranks was not indexed: Elapsed(())" and event_plane_publisher_roundtrips_batch_through_production_codec with "subscriber should receive an event batch: Elapsed(())". Both passed together in an isolated serial retry, then the complete 173-test selection passed serially. No source changes were made between these runs.
+
+The build emitted existing fetch_update deprecation warnings, the unused join_reuseport warning, and the macOS linker warning "__eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected". No warning cleanup was included. The preceding rebase attempt had been blocked by read-only Git metadata; restored access allowed this attempt to complete.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+The intentionally empty CI retry commit remains in the nine-commit sequence. Use --no-default-features for dynamo-llm tests on macOS. Preserve origin notes by fetching refs/notes/commits into FETCH_HEAD and merging before pushing; local notes can be ahead of origin. The old tip backup remains available for comparison.
+
+## Codebase Discoveries
+Main advanced by 97 commits from 631d7c1f5e4f851b8185f187790845a1fdf6d3a8 to 7d82c10d9ea050de5147d94894b99d664d60d37c; all PR patches replayed without adaptation. The same two event-delivery tests had intermittent timeouts during the previous rebase, as recorded in the preserved notes.
+
+## Open Questions
+The cause of the intermittent event-delivery timeouts is not established. Both focused and full serial retries passed, so no unrelated test or transport changes were made. Remote CI must validate the new head after the push.
