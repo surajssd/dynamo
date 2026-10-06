@@ -75,3 +75,26 @@ Main advanced by 97 commits from 631d7c1f5e4f851b8185f187790845a1fdf6d3a8 to 7d8
 
 ## Open Questions
 The cause of the intermittent event-delivery timeouts is not established. Both focused and full serial retries passed, so no unrelated test or transport changes were made. Remote CI must validate the new head after the push.
+
+# Rebase publication on 2026-10-06
+
+## Conversation
+Complete the authorized rebase and push of PR #15260.
+
+## Actions
+Pushed the branch and notes atomically to origin with an explicit force-with-lease on d051b1b6c324b4ec9d3aa26b7f5731e975a6bffc. Verified the remote branch and PR now point to 304ec15636d0be7eeb94afec06a46b5b957a626a, GitHub reports all nine signatures verified with reason valid, and the working tree is clean. Pre-merge CI restarted at https://github.com/ai-dynamo/dynamo/actions/runs/37537756080 and its jobs are queued. DCO passed. GitHub reports mergeable=true.
+
+## Errors & Mistakes
+None during publication. Test timeout details remain in the preceding rebase record.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+This rebase is published. Do not mistake the preceding entry's planned push for an outstanding task. No review replies or GitHub comments were posted.
+
+## Codebase Discoveries
+None.
+
+## Open Questions
+Remote CI is still pending on the new head.
