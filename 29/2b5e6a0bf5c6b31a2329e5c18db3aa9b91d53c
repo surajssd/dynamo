@@ -1,0 +1,57 @@
+## Conversation
+Second P2 from dmitry-tokarev-nv on PR #14965: every router recorded one provenance entry per cached block per worker even with `--shared-cache-type none`, because the ZMQ decoder reads an absent `shared_cache_eligible` as eligible and no Python producer sends the key. Reviewer asked to gate the map on the configured shared-cache type.
+
+## Actions
+Used an explore subagent to trace SharedCacheType -> Indexer -> RadixTree. Finding: RadixTree is built inside KvIndexer::from_builder with only KvIndexerBuilder in scope; the shared-cache observer lives on the `Indexer` enum, not the tree; the only consumer of dump provenance is `restore_dump_provenance` on the dump/replay path (worker TreeDump -> router try_apply_event -> observer.observe_stored). Changed `shared_cache_provenance` to `Option<...>` (None = off), added `RadixTree::enable_shared_cache_provenance`, `KvIndexerBuilder::shared_cache_provenance(bool)`, gated the two frontend `Indexer::Single` sites on `shared_cache_type != None`, and made LocalKvIndexer always enable it. Added a default-off regression test; two existing provenance tests opt in via a helper. Ran full `cargo test -p dynamo-kv-router` (1073 pass).
+
+## Errors & Mistakes
+None.
+
+## Dead Ends
+Considered storing eligibility inside NodeState instead of a side map; rejected as a larger redesign touching CRTC. Considered plumbing a Mooncake flag from Python into KvEventPublisher/KvStateAgent so the worker side could gate too; rejected as out of scope for the review item, and the worker map only holds its own blocks.
+
+## Hints for Future Agents
+- The worker-side LocalKvIndexer (publisher/mod.rs, state_agent.rs) has no KvRouterConfig, so it cannot gate on router config. If it is ever gated off, TreeDump recovery will hand a mooncake-store router all-false eligibility and it will forget learned edges on recovery.
+- The concurrent trees (ConcurrentRadixTree, CRTC) have no provenance map and dump `shared_cache_eligible: false`; frontends with router_event_threads > 1 already lose provenance on dump.
+- `KvIndexer::new_with_pruning` / `new_with_approximate_retention` are still used by bench, mocker, remote side indexer, and backend.rs; do not remove them.
+- The Python `RadixTree` binding (lib/bindings/python/rust/llm/kv.rs) calls `RadixTree::new()` and now dumps without provenance; no Python test depends on it.
+
+## Codebase Discoveries
+lib/kvbm-consolidator/src/wire/router_out.rs emits BlockStored with `medium: None` and no `shared_cache_eligible`, so consolidator events arrive as eligible primary stores. Not reachable for the Mooncake cache because `observe_stored` also requires the source in `allowed_sources`, which needs a published Mooncake contract.
+
+## Open Questions
+Whether the reviewer accepts the worker-side map staying always on. Whether the `tokens_hash` check in `restore_dump_provenance` is needed given the Engine Hash Invariant (a HashSet would halve the entry size).
+
+## Rebase conflict resolution (2026-09-23, onto main 6fad666a7)
+f804218070 removed ResolvedApproximatePrimaryPolicy::Disabled and the early `return Ok(Indexer::None)` at overlap_score_credit <= 0 in indexer/mod.rs; our `shared_cache_provenance` gate sat right after it. Kept only our line. Indexing now follows the policy's WorkerInputs::CACHE declaration, which is decided one layer up.
+
+# Rebase on 2026-10-01
+
+## Conversation
+The user requested rebasing PR #15260, suraj/kv-router-shared-cache-eligibility, on current main. The user prohibits posting to GitHub, so this work remained local.
+
+## Actions
+Fetched upstream/main and the origin PR branch. The initial working tree was clean and HEAD matched the remote PR head. Rebased seven commits from f5d3353e2167bb0f0d729085eb5bc9183bf4b222 onto 631d7c1f5e4f851b8185f187790845a1fdf6d3a8 with GPG signing and DCO sign-offs. This commit was rewritten from 1c9319f2356c803bd22ef91478107402df267cc6 to d84149e33b12a4333c77f828b51c45d5bad17b05; its message is unchanged. Preserved existing notes and the old tip at refs/backup/rebase-kv-router-shared-cache-eligibility-82069885ed.
+
+This commit replayed without a manual conflict resolution. The first commit in the series required a radix-tree removal conflict resolution; that resolution preserved both upstream removal bookkeeping and the PR's provenance cleanup.
+
+Ran cargo fmt -p dynamo-kv-router during conflict resolution. Verified cargo fmt --all --check, git diff --check, range-diff, clean tracked and untracked state, and all seven commit signatures. Inspected the complete PR diff in path groups. The PR still changes 60 files with 976 additions and 38 deletions; no generated files changed.
+
+Validation: cargo test --locked -p dynamo-kv-router -p kvbm-consolidator --quiet passed (1042 KV-router unit tests, one KV-router integration test, and 51 consolidator tests; ignored tests remained ignored). The full LLM publisher/indexer run with --no-default-features and --test-threads=1 passed all 172 tests.
+
+## Errors & Mistakes
+The initial parallel LLM run passed 170 tests and timed out in event_plane_publisher_roundtrips_batch_through_production_codec with "subscriber should receive an event batch: Elapsed(())" and direct_zmq_multi_node_replacement_isolated_by_global_rank with "distinct state for all eight global ranks was not indexed: Elapsed(())". Both passed when run together with --test-threads=1, and the complete 172-test publisher/indexer selection then passed serially. No source changes were made for these timeouts.
+
+The macOS build warned about unused join_reuseport in lib/runtime/src/pipeline/network/quic_response.rs:844; that file is identical to upstream/main. The linker also warned that __eh_frame exceeds 16MB for compact unwind offsets.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+The old tip is retained at refs/backup/rebase-kv-router-shared-cache-eligibility-82069885ed. Existing historical notes are preserved above this entry when present. The branch and notes have not been pushed. The GitHub PR still points at the old head until the user publishes the rebase.
+
+## Codebase Discoveries
+Upstream d11bfffc6d changed radix-tree removal to collect eagerly removed hashes in a vector and build its hash set only on a lookup miss. The stale-hash loop must borrow outcome.stale_hashes so the following extend_from_slice can still use it. Shared-cache provenance cleanup belongs inside that same loop.
+
+## Open Questions
+The cause of the two initial parallel ZMQ test timeouts was not established. Investigating parallel test stability is outside this rebase; the isolated rerun and full serial selection passed.
