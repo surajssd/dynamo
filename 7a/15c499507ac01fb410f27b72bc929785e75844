@@ -24,3 +24,28 @@ The new fixtures exercise AISimulate G2 host-pinned cache hits in online and off
 
 ## Open Questions
 Fresh remote CI must confirm the fix after push. Approval is pending for the one-line PR issue-link edit; no GitHub comments or description edits have been made in this turn.
+
+## Conversation
+2026-10-08 follow-up: the user asked to inspect the remaining failure using the gh CLI and retry after network access was restored. The user explicitly approved adding the issue reference with "Add the issue link". Public review replies and comments remain prohibited.
+
+## Actions
+Completed the approved one-line PR body edit, adding '- Part of #14842' under Related Issues. The latest issue-link run 37547874576 passed. Pre Merge run 37546662205 also completed successfully, including all Rust test and Clippy jobs. This supersedes the pending items in the original note.
+
+Inspected full-CI run 37680610849 on the same head, 7a15c499507ac01fb410f27b72bc929785e75844. Downloaded full job logs and read check annotations through gh. SGLang job 112995631125 exceeded its 60-minute job limit during Build and Push Image. vLLM job 112995631167 exceeded its 90-minute job limit during Compliance extract after its image build had succeeded. Both logs showed continued build progress before cancellation and no compiler failure. backend-status-check job 113033477636 failed because those build jobs were cancelled. The dependent vLLM and SGLang tests were skipped.
+
+Compared the equivalent runtime image builds in three recent main Post-Merge CI Pipeline runs: 37838698212, 37829168781, and 37825690228. Both runtime image builds passed in all three runs. Attempted gh run rerun 37680610849 --repo ai-dynamo/dynamo --failed, but GitHub denied the request. Final gh pr checks reported 54 passing checks, 51 skipped checks, two cancelled image builds, and one failed dependent gate. The PR still points to the same commit. No source or workflow files were edited during this follow-up; the worktree is clean. Rechecked the full PR diff summary and whitespace: 60 files, 1000 additions, 54 deletions, no generated files.
+
+## Errors & Mistakes
+The rerun command returned: 'run 37680610849 cannot be rerun; Must have admin rights to Repository.' Repository permissions confirm pull=true and push/maintain/admin=false. Earlier gh attempts had been blocked by network restrictions; live access now works.
+
+## Dead Ends
+Querying pr.yaml runs on main finds obsolete March runs because that workflow now runs on pull-request/* branches. Used post-merge-ci.yml for the current main comparison instead. Did not create an empty commit or change global timeouts to work around the missing rerun permission.
+
+## Hints for Future Agents
+Use gh pr checks for the latest per-check results; statusCheckRollup can include superseded failed issue-link checks. Full CI has now run, and pull-request/15260 exists. A maintainer must rerun the failed jobs on run 37680610849. Do not mistake the downstream backend-status-check failure for a separate source-code failure. A retry is needed to determine whether the observed timeouts were transient.
+
+## Codebase Discoveries
+shared-build-image.yml applies build_timeout_minutes to the entire job, including test-image and compliance work. The PR workflow allocates 90 minutes to vLLM and 60 minutes to SGLang; the post-merge workflow allocates 120 minutes to each runtime image build. Successful recent main builds do not establish the outcome of a retry for this PR.
+
+## Open Questions
+The two full-CI image builds and their downstream tests still need a successful rerun. The current GitHub account cannot start that rerun. No new code defect was established from the cancelled image build logs.
