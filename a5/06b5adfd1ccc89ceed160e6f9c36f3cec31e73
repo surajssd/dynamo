@@ -18,3 +18,24 @@ The pinned protocol types already support optional parameters and strict, so no 
 
 ## Open Questions
 Full documentation verification remains blocked by the unrelated existing Fern broken link. No public posting or push is authorized. The prepared release-note bullet needs placement when an appropriate unreleased release page exists.
+
+## Conversation
+The user requested a rebase onto main on 2026-10-09. Validation exposed an incompatibility between this strict-schema preflight and a new upstream test fixture.
+
+## Actions
+Removed only the explicit strict: true field from kimi_k3_builder_error_uses_native_fallback in lib/llm/src/preprocessor/tool_choice.rs. Folded the adjustment into this commit with a signed fixup and autosquash. The request schema, direct builder-error assertion, error-message checks, and fallback assertions remain intact. Ran cargo fmt --all and the full 20-test preprocessor::tool_choice::tests group successfully after observing the failure first.
+
+## Errors & Mistakes
+The original fixture failed before reaching fallback with: Invalid schema for function 'get_weather': In context=#, object schemas require additionalProperties: false. The fixture also intentionally contains allOf and a scoped reference, so closing the root alone would not make it suitable for explicit strict preflight.
+
+## Dead Ends
+Did not replace the scoped-reference fixture or relax production validation. Those changes would weaken the original regression or alter the feature contract.
+
+## Hints for Future Agents
+Keep strict omitted in this fixture. dynamo-parsers 9.2.7 StructuralTagSchemaMode::Auto still uses the declared schema when strict is omitted; only explicit false opts out. The direct Kimi K3 builder call still proves a real scoped-string-reference error, and the preprocessor then proves compatibility fallback. Marking this deliberately unsupported schema strict would instead test early rejection.
+
+## Codebase Discoveries
+Upstream 3213fe6f03 added this regression. The pinned parser's uses_declared_tool_schema returns strict_schema || tool.strict != Some(false), and its own unresolved_string_references_return_errors test uses strict: None with the same scoped schema.
+
+## Open Questions
+None.
