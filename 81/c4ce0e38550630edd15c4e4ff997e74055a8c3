@@ -141,3 +141,30 @@ Upstream changes to the three lockfiles, lib/llm/Cargo.toml, the OpenAI module, 
 
 ## Open Questions
 None for the local rebase. The rebased branch has not been pushed.
+
+## Conversation
+On 2026-10-09, the user requested another rebase onto main. The first attempt was blocked by restricted access to the shared Git directory. The user enabled full access and asked to retry. The standing no-publication instruction remains in effect.
+
+## Actions
+Confirmed a clean branch at ea420ecbc677ce63655014a4e724710196553c91. Refetched upstream/main and pinned bd8a95c03519649265403ee89b62fc21b035c1c6, 82 commits beyond the previous base 7d82c10d9ea050de5147d94894b99d664d60d37c. Saved the starting head at refs/codex-backups/strict-schema-pre-rebase-20261009-ea420ecbc6. Read the newly required protocol field handling contract. Rebased all six commits with signing and notes rewriting enabled; no textual conflicts occurred.
+
+Validated protocol, service, and tool-choice tests. The new upstream Kimi K3 builder-error fixture failed strict preflight. Inspected upstream history and the pinned dynamo-parsers 9.2.7 implementation, then removed only strict: true from that intentionally unsupported schema. Omitted strict retains declared-schema processing in the builder, and the unchanged assertions still prove a real builder error and fallback. The entire 20-test tool-choice group then passed. Formatted the Rust code, linted the temporary fixup message, committed the one-line adjustment with DCO and signing, and autosquashed it into the first commit. Final head: 81c4ce0e38550630edd15c4e4ff997e74055a8c3. The six original commit messages, DCO sign-offs, and existing notes are preserved, and every signature validates. Added a focused note to the first commit explaining the fixture contract.
+
+Audited the full PR against its merge base by comparing every patch with the previously reviewed patch, inspecting the complete differences and the documentation context, and checking the final stat, range-diff, working tree, and untracked files. The only additional source edit is the one-line test-fixture change. Main already contains the structural-tag.md copyright update, so that edit drops out of the PR. The final scope remains 13 files, 1289 additions, and 9 deletions. The three generated Cargo.lock files retain their existing one-line percent-encoding dependency additions; no regeneration or manual generated-file edits were needed. The final tree exactly matches the tested fixture adjustment, the working tree is clean, and the pinned main is the merge base. No follow-up code changes are deferred.
+
+Validation on macOS with Homebrew Rust and Cargo 1.99.0: cargo fmt --all and cargo fmt --all -- --check passed; git diff --check passed; locked metadata checks passed for the root, Python bindings, and KVBM bindings manifests. cargo test -p dynamo-llm --no-default-features --locked --lib protocols::openai -- --quiet passed 669 tests with 10 ignored. The http::service::tests filter passed 22 tests. The preprocessor::tool_choice::tests filter passed all 20 tests after the fixture adjustment. cargo test -p dynamo-llm --no-default-features --locked --test frontend_protocol_validation_http -- --quiet passed 12 tests. The test-only fixture change does not alter production code. No push or GitHub write was performed.
+
+## Errors & Mistakes
+The earlier restricted attempt printed Operation not permitted when creating rebase-merge, despite a reported exit code of 0; HEAD and status remained unchanged. The initial tool-choice run had 19 passed and 1 failed: kimi_k3_builder_error_uses_native_fallback was rejected with Invalid schema for function 'get_weather': In context=#, object schemas require additionalProperties: false. A combined source/history/guideline read exceeded the output budget; focused reads recovered the relevant test and history. The builds emitted existing Atomic::fetch_update deprecation warnings, the unused join_reuseport warning, the macOS linker unwind-table warning, and the proc-macro-error2 future-compatibility warning.
+
+## Dead Ends
+Closing the fixture root alone would leave its intentional allOf and scoped-reference exclusions. Removing only explicit strict preserves the upstream test purpose. There was no need to replace the schema, weaken assertions, alter global schema mode, or modify production validation.
+
+## Hints for Future Agents
+Keep the fallback fixture's strict field omitted. The detailed explanation is in the note on a506b5adfd1ccc89ceed160e6f9c36f3cec31e73. The origin tracking branch remains at ea420ecbc677ce63655014a4e724710196553c91. Any later authorized publication must use force-with-lease and include refs/notes/commits. The shared Git directory lies outside this worktree, so workspace-only permissions can block rebasing. Confirm HEAD and status after operations instead of relying only on their reported exit code.
+
+## Codebase Discoveries
+Main now includes the structural-tag default changes and V2 parser tests. An omitted tool strict field still enables schema use in the structural-tag builder, independently of this PR's explicit strict preflight. The protocol test filter now selects 679 tests, of which 10 are ignored by default.
+
+## Open Questions
+None for the local rebase. The rebased branch has not been pushed.
