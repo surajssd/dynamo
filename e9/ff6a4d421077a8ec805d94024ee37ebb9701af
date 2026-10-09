@@ -55,3 +55,28 @@ Main's namespace-isolation change added StrictNamespacePrefix and independently 
 
 ## Open Questions
 No unresolved rebase work remains. The pre-existing broken link in docs/fern/pages/recipes/model-recipes/deepseek-v4-pro-0813.mdx:254 points to /dynamo/recipes/model-recipes/deepseek-v4-pro. The same link exists on upstream/main, and the recipe and navigation files are unchanged by this PR. That unrelated repair remains deferred.
+
+## Conversation
+On 2026-10-09, the user requested another rebase and push of frontend-dependency-startup-probe. Preserve the existing review fixes and do not post GitHub comments.
+
+## Actions
+Fetched upstream/main at f9674898557e8484b9a2ed38c59d7842a6fed7d9. Verified PR #15581 remained open and the remote branch was at b349748c0c895e8e5d5fc2d72690f459db8361b2. Fetched remote commit notes and preserved them before rebasing. Rebased both commits with GPG signing and automatic note rewriting. The rebase completed without conflicts. Rewrote 1460cca9bb75c21b8ad39cf2d4686deb4765761d as 132ccbe3dd5fc5c2a95232461d536fbde63e115f and b349748c0c895e8e5d5fc2d72690f459db8361b2 as e9ff6a4d421077a8ec805d94024ee37ebb9701af. git range-diff reported both patches unchanged. Verified both new signatures and preserved DCO sign-offs and prior notes.
+
+With GOTOOLCHAIN=go1.26.8, regenerated CRDs and both Kubernetes API references without producing any changes. The full internal/dynamo, internal/features/runtime, and internal/webhook/validation tests passed; the validation package used the existing Kubernetes 1.30.0 envtest assets. The clustertest-tagged controller package compiled with -run '^$'. No real Kind outage test was rerun; previous notes contain those results. All applicable pre-commit hooks passed. The generated Kubernetes API check passed. Docs lint passed with zero errors and six existing warnings.
+
+Audited the complete PR diff, its stat, range-diff, staged and unstaged state, and untracked files. Scope remains 17 files, 747 additions and 53 deletions: 13 human-authored files with 658 changed lines and four generated files with 142. Every file still supports the existing startup-probe concern. The working tree is clean. Prepared an atomic branch-and-notes push with an explicit force-with-lease expecting remote head b349748c0c895e8e5d5fc2d72690f459db8361b2. No comments or review replies were posted.
+
+## Errors & Mistakes
+None.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+Use Go 1.26.8 for this operator version. The envtest assets are at /Users/suraj/.herdr/worktrees/dynamo/nats-retry/deploy/operator/bin/k8s/1.30.0-darwin-arm64. Preserve remote commit notes because the ref is shared across worktrees. The prior notes explain the independent frontend-sidecar image version semantics retained from main; do not restore inheritance from the worker runtime override.
+
+## Codebase Discoveries
+The new main's snapshot failover and container-base changes do not require changing either startup-probe patch. Generated CRDs and API references remain reproducible after the rebase.
+
+## Open Questions
+None for this rebase. No new follow-up work was introduced. The unrelated DeepSeek recipe link issue recorded in the previous notes remains outside this PR's scope; the full Fern link check was not repeated during this conflict-free rebase.
