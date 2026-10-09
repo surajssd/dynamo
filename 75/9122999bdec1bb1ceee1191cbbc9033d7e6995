@@ -49,3 +49,32 @@ shared-build-image.yml applies build_timeout_minutes to the entire job, includin
 
 ## Open Questions
 The two full-CI image builds and their downstream tests still need a successful rerun. The current GitHub account cannot start that rerun. No new code defect was established from the cancelled image build logs.
+
+## Conversation
+2026-10-09: the user explicitly requested rebasing PR #15260 on current main and repushing. The scope was the rebase and required compatibility fixes only. No public comments or review replies were authorized or posted.
+
+## Actions
+Confirmed a clean worktree and that origin's PR branch still pointed to 7a15c499507ac01fb410f27b72bc929785e75844. Created refs/backup/rebase-kv-router-shared-cache-eligibility-7a15c49950. Rebased all 10 commits with GPG signing and notes rewriting from base 7d82c10d9ea050de5147d94894b99d664d60d37c onto main f9674898557e8484b9a2ed38c59d7842a6fed7d9 without conflicts. Main advanced by two Python/docs commits during validation; included them in a second clean rebase onto bd8a95c03519649265403ee89b62fc21b035c1c6. Final head is 759122999bdec1bb1ceee1191cbbc9033d7e6995.
+
+All ten range-diff entries remain equal. Verified that all commit messages and DCO sign-offs are unchanged, all ten signatures are good, and all existing notes copied exactly to the final commits before appending this entry. Compared the final PR diff byte-for-byte with the tested intermediate diff and checked that lib/, Cargo.toml, Cargo.lock, rust-toolchain.toml, and .cargo inputs are unchanged by the second rebase. Inspected the complete PR diff in path groups, its stat, whitespace, and untracked state. The PR remains 60 human-authored files, 1000 additions, and 54 deletions, with no generated files and no new source edits during this rebase.
+
+cargo fmt --all --check and git diff --check passed. cargo test --locked -p dynamo-kv-router -p kvbm-consolidator -p dynamo-mocker --all-targets --no-run --quiet passed. The same three packages' --lib --tests suites passed 1609 tests, with three ignored. The initial LLM router suite passed 403 and timed out in six direct ZMQ receive tests. All six failed again serially with automatic host selection, then all six passed serially with DYN_EVENT_PLANE_HOST=127.0.0.1. The complete LLM router suite passed all 409 tests with DYN_EVENT_PLANE_HOST=127.0.0.1 cargo test --locked -p dynamo-llm --no-default-features --lib kv_router:: --quiet. Total distinct targeted tests passed: 2018.
+
+## Errors & Mistakes
+A combined fetch of the branch and notes left FETCH_HEAD naming the branch first. Running git notes merge FETCH_HEAD created an unwanted local notes merge 17add87d2801ec8f24fe76134ac89dbd73ef501b. Detected it immediately, restored the notes ref to its prior 2c82e1ec3925763331fdd8e6afb4289f8bd11b0c using an expected-old-value update-ref, then fetched only refs/notes/commits and merged the correct FETCH_HEAD. The mistaken merge was never pushed and changed no source files.
+
+The six initial LLM failures were direct_metrics_fan_in_receives_several_publishers, direct_zmq_multi_node_replacement_isolated_by_global_rank, event_plane_publisher_roundtrips_batch_through_production_codec, direct_zmq_batch_ingress_applies_after_publisher_recreation, active_sequence_replica_sync_isolated_by_endpoint, and worker_completion_ingress_runs_without_router_replica_sync. All failed receiving local events with Elapsed(()) or 'deadline has elapsed'. Loopback advertisement made all six and the full suite pass; no source fix was needed for this local validation.
+
+One search used nonexistent lib/runtime/src/event_plane; the correct directory is lib/runtime/src/transports/event_plane. One test launch omitted the leading slash in workdir and returned 'Failed to create unified exec process: No such file or directory (os error 2)'; no process started, and the corrected launch succeeded. Large initial diff outputs were truncated; reread the omitted path groups before completing the audit.
+
+## Dead Ends
+Serial execution alone did not resolve the six receive timeouts. Did not modify test deadlines, CI workflows, production transport code, or unrelated warnings to force a pass.
+
+## Hints for Future Agents
+Fetch notes separately before merging FETCH_HEAD, especially because the notes ref is shared by other worktrees. Keep an explicit lease on the original PR head when force-pushing this rebase. For local macOS direct event-plane tests, DYN_EVENT_PLANE_HOST=127.0.0.1 makes same-process publishers reachable. The override is command-scoped and was not persisted to project configuration. Continue using --no-default-features for macOS dynamo-llm validation. Upstream atomic fetch_update deprecations, the macOS join_reuseport warning, and the macOS large unwind-table linker warning did not prevent successful tests.
+
+## Codebase Discoveries
+Direct event-plane publishers bind a wildcard address but advertise the resolved host IP unless DYN_EVENT_PLANE_HOST is set. Tests can therefore time out on this machine with automatic host selection while working over loopback. The two latest main commits, 94db2a1c9c and bd8a95c035, only change Python/frontend/SGLang behavior and documentation; the tested Rust source and build inputs are identical in the final rebase.
+
+## Open Questions
+Fresh remote CI must validate the new head after push. No source work is deferred by this rebase. The earlier full-CI image-build timeouts belong to the previous head and are not evidence of the new head's outcome.
