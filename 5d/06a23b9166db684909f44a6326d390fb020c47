@@ -1,0 +1,20 @@
+## Conversation
+The user asked for an unattended loop on PR #15153: monitor CI and reviews, rebase when needed, fix failures, commit, push with gpo.sh, and keep going until the PR is mergeable.
+
+## Actions
+Rebased fix/strict-tool-schema-validation from d2b021f112 onto upstream/main 2e4998a30c with `git -c notes.rewriteRef=refs/notes/commits rebase upstream/main`, which carried both existing commit notes. The re-run Pre Merge on the pre-rebase head passed all Clippy jobs but failed rust-tests (.) on four tests added by 843d92a7e4 (Kimi dynamic tools): three in http::service::tests and effective_tools_preserve_order_and_normalize_wrapped_and_bare_shapes. Their strict: true fixtures lacked additionalProperties: false and required, and validated_effective_tools now routes dynamic tools through validate_tools and therefore through the strict preflight. Closed both fixtures. Verified the four tests and the walker tests pass locally.
+
+## Errors & Mistakes
+CI failure messages: "Invalid schema for function 'lookup': In context=#, object schemas require additionalProperties: false" and the same for 'wrapped_dynamic'. A perl multi-line substitution inserted blank lines between JSON keys; reverted the file and redid the edit with a Python exact-string replacement. The default cargo home is read-only in this sandbox ("failed to open .../heck-0.4.1.crate: Operation not permitted"); copied ~/.cargo/registry/{index,cache} to $TMPDIR/cargo-home and set CARGO_HOME.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+The sandbox cannot reach gpg-agent or ssh-agent, so `git commit -S` fails with "No agent running" and the rebase produced unsigned commits; the user must re-sign outside the sandbox. `git config` on the shared worktree config also fails (config lock is not writable), so pass `-c notes.rewriteRef=refs/notes/commits` on every rebase or amend. Tests that bind sockets or start ZMQ fail locally with "Operation not permitted"; only CI can run the HTTP suites. Author surajssd is not in APPROVED_EXTERNAL_CONTRIBUTORS and lacks maintainer permission, so full CI requires a maintainer to comment `/ok to test <sha>`.
+
+## Codebase Discoveries
+Since 843d92a7e4, Chat validation calls validate::validated_effective_tools, which normalizes Kimi system-message tool declarations and then runs validate_tools on the combined list. Any strict dynamic tool is therefore subject to the strict preflight. lib/llm/src/http/service.rs::apply_request_tool_call_parsing_options also calls effective_tools before parsing setup.
+
+## Open Questions
+Whether the Kimi dynamic-tool path should skip strict preflight was not asked; the fixtures were closed instead because strict: true declares OpenAI strict-mode intent.
