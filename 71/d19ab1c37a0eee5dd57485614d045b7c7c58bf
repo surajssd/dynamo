@@ -45,3 +45,24 @@ None.
 
 ## Open Questions
 Only the unrelated existing DeepSeek recipe link remains deferred as described above.
+
+## Conversation
+The user explicitly asked to keep the PR title and description up to date. This authorizes maintaining PR metadata as the work changes; the prohibition on posting comments and review replies still applies.
+
+## Actions
+Updated PR #15581 to "fix(operator): allow frontend startup waits and validate probes". Rewrote its description around the complete branch diff, including independent frontend-sidecar version resolution, all three probe fields, admission compatibility, current validation results and limits, generated files, and reviewer entry points. Confirmed #15269 is merged and retained the reference to tracked issue #15267. Replaced the stale description and duplicate automated summary with the current description. Read the saved title and body back from GitHub and confirmed the PR head remains 71d19ab1c37a0eee5dd57485614d045b7c7c58bf. No comments were posted and no source files changed.
+
+## Errors & Mistakes
+None.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+Refresh this PR's title and description after changes to its scope, implementation, or validation evidence. Do not leave superseded behavior or outdated dependency instructions in the description. The user has explicitly requested ongoing maintenance of these fields, so no additional approval is needed for that metadata update.
+
+## Codebase Discoveries
+PR #15269 merged on 2026-10-05. Issue #15267 is closed; retain a non-closing related-issue reference.
+
+## Open Questions
+None for this metadata update. The existing DeepSeek documentation link remains deferred and is disclosed in the PR description.
