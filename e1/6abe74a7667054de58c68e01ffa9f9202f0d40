@@ -1,0 +1,80 @@
+## Conversation
+P3 on PR #14965 (CodeRabbit finding confirmed by dmitry-tokarev-nv): coalescing stores with mixed `shared_cache_eligible` collapsed the merged event to ineligible, losing provenance for the eligible prefix. Reviewer cautioned to apply the compatible_data and merge_data changes together because a debug_assert alone would panic on the exact case it describes.
+
+## Actions
+Added `pending.shared_cache_eligible == next.shared_cache_eligible` to `compatible_data`, removed the `&=` from `merge_data`, replaced the test that pinned the AND semantics with one asserting mixed chains flush as two chained events (parent_hash of the second equals the first block's hash). Ran `cargo test -p dynamo-llm --no-default-features --lib -- kv_router::publisher::batching`.
+
+## Errors & Mistakes
+None.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+The coalescer emits at most two outputs per push; a mixed pair produces the flushed first store on the second push and the second store on flush. No other test or doc pinned the old merge behavior.
+
+## Codebase Discoveries
+lib/llm/src/kv_router/publisher/AGENTS.md: KV routing events are advisory; do not add fail-closed behavior to the ordinary pipeline.
+
+## Open Questions
+None.
+
+# Rebase on 2026-10-01
+
+## Conversation
+The user requested rebasing PR #15260, suraj/kv-router-shared-cache-eligibility, on current main. The user prohibits posting to GitHub, so this work remained local.
+
+## Actions
+Fetched upstream/main and the origin PR branch. The initial working tree was clean and HEAD matched the remote PR head. Rebased seven commits from f5d3353e2167bb0f0d729085eb5bc9183bf4b222 onto 631d7c1f5e4f851b8185f187790845a1fdf6d3a8 with GPG signing and DCO sign-offs. This commit was rewritten from fcf36f96cbe1f3fcfa9dce71c256bcb98b7e64cf to a31cd19f2e1522de2c1dd5e1c5aae220b73a783a; its message is unchanged. Preserved existing notes and the old tip at refs/backup/rebase-kv-router-shared-cache-eligibility-82069885ed.
+
+This commit replayed without a manual conflict resolution. The first commit in the series required a radix-tree removal conflict resolution; that resolution preserved both upstream removal bookkeeping and the PR's provenance cleanup.
+
+Ran cargo fmt -p dynamo-kv-router during conflict resolution. Verified cargo fmt --all --check, git diff --check, range-diff, clean tracked and untracked state, and all seven commit signatures. Inspected the complete PR diff in path groups. The PR still changes 60 files with 976 additions and 38 deletions; no generated files changed.
+
+Validation: cargo test --locked -p dynamo-kv-router -p kvbm-consolidator --quiet passed (1042 KV-router unit tests, one KV-router integration test, and 51 consolidator tests; ignored tests remained ignored). The full LLM publisher/indexer run with --no-default-features and --test-threads=1 passed all 172 tests.
+
+## Errors & Mistakes
+The initial parallel LLM run passed 170 tests and timed out in event_plane_publisher_roundtrips_batch_through_production_codec with "subscriber should receive an event batch: Elapsed(())" and direct_zmq_multi_node_replacement_isolated_by_global_rank with "distinct state for all eight global ranks was not indexed: Elapsed(())". Both passed when run together with --test-threads=1, and the complete 172-test publisher/indexer selection then passed serially. No source changes were made for these timeouts.
+
+The macOS build warned about unused join_reuseport in lib/runtime/src/pipeline/network/quic_response.rs:844; that file is identical to upstream/main. The linker also warned that __eh_frame exceeds 16MB for compact unwind offsets.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+The old tip is retained at refs/backup/rebase-kv-router-shared-cache-eligibility-82069885ed. Existing historical notes are preserved above this entry when present. The branch and notes have not been pushed. The GitHub PR still points at the old head until the user publishes the rebase.
+
+## Codebase Discoveries
+Upstream d11bfffc6d changed radix-tree removal to collect eagerly removed hashes in a vector and build its hash set only on a lookup miss. The stale-hash loop must borrow outcome.stale_hashes so the following extend_from_slice can still use it. Shared-cache provenance cleanup belongs inside that same loop.
+
+## Open Questions
+The cause of the two initial parallel ZMQ test timeouts was not established. Investigating parallel test stability is outside this rebase; the isolated rerun and full serial selection passed.
+
+# Rebase on 2026-10-06
+
+## Conversation
+The user requested rebasing PR #15260 on current main, then said to try again after Git metadata access was restored. The earlier authorization to push this PR branch remains in effect.
+
+## Actions
+Fetched upstream/main at 7d82c10d9ea050de5147d94894b99d664d60d37c and origin's PR head at d051b1b6c324b4ec9d3aa26b7f5731e975a6bffc. Preserved the old tip at refs/backup/rebase-kv-router-shared-cache-eligibility-d051b1b6c3. Replayed all nine commits with git rebase --gpg-sign --signoff --empty=keep and notes rewriting enabled. This commit changed from a31cd19f2e1522de2c1dd5e1c5aae220b73a783a to 74e07efe96851424dde09dcc81ad342c32291a1a. The rebase had no conflicts, no manual source edits, and no changes to the original patches or commit messages. Existing notes were preserved before this entry was appended.
+
+Verified all nine local signatures, exact old/new commit messages and notes, range-diff equality for all patches, cargo fmt --all --check, git diff --check, and a clean working tree including untracked files. Inspected the complete PR diff against the new base: 60 files, 998 additions, 54 deletions, with no generated artifacts changed.
+
+Validation passed: cargo test --locked -p dynamo-kv-router -p kvbm-consolidator --quiet (1052 KV-router unit tests, one KV-router integration test, 51 consolidator tests; ignored tests remained ignored). The LLM publisher/indexer selection with --no-default-features and --test-threads=1 passed all 173 tests after the retries detailed below. Origin notes were fetched into FETCH_HEAD and merged without conflict. The branch and notes will be pushed together atomically with an explicit force-with-lease expecting d051b1b6c324b4ec9d3aa26b7f5731e975a6bffc.
+
+## Errors & Mistakes
+The first serial LLM publisher/indexer run passed 171 tests and timed out in direct_zmq_multi_node_replacement_isolated_by_global_rank with "distinct state for all eight global ranks was not indexed: Elapsed(())" and event_plane_publisher_roundtrips_batch_through_production_codec with "subscriber should receive an event batch: Elapsed(())". Both passed together in an isolated serial retry, then the complete 173-test selection passed serially. No source changes were made between these runs.
+
+The build emitted existing fetch_update deprecation warnings, the unused join_reuseport warning, and the macOS linker warning "__eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected". No warning cleanup was included. The preceding rebase attempt had been blocked by read-only Git metadata; restored access allowed this attempt to complete.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+The intentionally empty CI retry commit remains in the nine-commit sequence. Use --no-default-features for dynamo-llm tests on macOS. Preserve origin notes by fetching refs/notes/commits into FETCH_HEAD and merging before pushing; local notes can be ahead of origin. The old tip backup remains available for comparison.
+
+## Codebase Discoveries
+Main advanced by 97 commits from 631d7c1f5e4f851b8185f187790845a1fdf6d3a8 to 7d82c10d9ea050de5147d94894b99d664d60d37c; all PR patches replayed without adaptation. The same two event-delivery tests had intermittent timeouts during the previous rebase, as recorded in the preserved notes.
+
+## Open Questions
+The cause of the intermittent event-delivery timeouts is not established. Both focused and full serial retries passed, so no unrelated test or transport changes were made. Remote CI must validate the new head after the push.
