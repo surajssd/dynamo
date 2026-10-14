@@ -1,0 +1,21 @@
+## Conversation
+The user approved splitting PR #15260 into parts 2a, 2b, and further parts as needed after review 5509904122. This commit is 2a, event metadata and coalescing. The original complete implementation is preserved at refs/backup/shared-cache-before-2a-split-42b9b233f3.
+
+## Actions
+Rebuilt 2a from main 2db5333ef6. Added shared_cache_eligible to RouterEvent and PlacementEvent with false defaults, omitted false serialization, and builder methods. Kept KvCacheStoreData unchanged. Preserved metadata through conversion, legacy publication, state-agent publication, and buffered recovery. Coalescing compares eligibility next to session_id. Changed the shared emit helper to accept the canonical RouterEvent so adding metadata does not require another positional argument. Synthesized dumps remain ineligible. Removed raw decoder classification, tree provenance, frontend gates, and worker automatic enablement from this part.
+Validated all targets of dynamo-kv-router, kvbm-consolidator, and dynamo-mocker and ran their unit/integration suites: 1633 passed, four ignored. LLM kv_router:: suite passed all 421 tests with --no-default-features and DYN_EVENT_PLANE_HOST=127.0.0.1. dynamo-bench all-target clippy with --no-deps -- -D warnings passed. Formatting and whitespace passed. Full diff is nine human-authored files, 156 additions, 33 deletions, no generated changes. Commitlint passed and the commit uses -s -S.
+
+## Errors & Mistakes
+The first LLM compile reported E0599 for flush and get_all_events_in_buffer: the trait was not imported and the buffer helper is cfg(test)-only in its owning crate. Replaced it with the public get_events_in_id_range query and imported KvIndexerInterface. The next compile reported E0432 because WorkerKvQueryResponse lives in indexer, not protocols; corrected the import. All subsequent tests passed. Existing upstream deprecation and macOS linker warnings remain unchanged.
+
+## Dead Ends
+No existing planner plan links to #15260, so created kv-router-shared-cache-eligibility-split. The wta helper is a shell function rather than an executable; source /Users/suraj/code/git/surajssd/dotfiles/configs/aliases/git to use it.
+
+## Hints for Future Agents
+Part 2b must classify raw events and set the envelope field, not add it back to KvCacheStoreData. Part 2c must keep production defaults off; worker activation belongs with its consumer. The original notes remain attached to the preserved old commits. Moving the bool to the envelope avoids the benchmark boxing change; strict benchmark clippy passes without it.
+
+## Codebase Discoveries
+Only a few RouterEvent literals need explicit initialization; most callers use constructors. Legacy publisher emit previously decomposed metadata into positional arguments; passing RouterEvent keeps metadata intact. Public recovery queries provide a cross-crate integration boundary for publisher tests. Default worker dumps intentionally omit positive eligibility, while their buffered events preserve it.
+
+## Open Questions
+Decoder and opt-in recovery follow-ups remain to be extracted and validated. New public PR publication must respect the user's standing GitHub restriction; no review replies are authorized.
