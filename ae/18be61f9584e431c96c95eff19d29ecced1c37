@@ -1,0 +1,21 @@
+## Conversation
+The user approved splitting PR #15260 into 2a, 2b, and further parts as needed after review 5509904122. This commit is 2b, raw ZMQ eligibility classification, based only on 2a commit 560dfa22e8. Part 2c is an independent sibling follow-up.
+
+## Actions
+Extracted the raw decoder changes from preserved original 42b9b233f3 and adapted conversion to the event-envelope metadata from 2a. Classified map and tuple inputs before normalization erases extra keys. Retained explicit false on raw-event serialization. Updated raw-event fixtures and encoded synthetic events as named maps inside batch tuples. Added a failing binary-key regression before restoring rejection of non-UTF-8 binary keys in the byte visitor.
+All 66 zmq_wire tests passed. All targets of dynamo-kv-router, kvbm-consolidator, and dynamo-mocker compiled; their unit/integration suites passed 1638 tests, four ignored. The LLM kv_router:: suite passed 421 tests with --no-default-features and DYN_EVENT_PLANE_HOST=127.0.0.1. Formatting and whitespace checks passed. Full diff is 17 human-authored files, 506 additions and 11 deletions; most files only initialize the new raw field in existing fixtures. No generated files changed. Commitlint passed and commit uses -s -S.
+
+## Errors & Mistakes
+The extracted original Binary variant accepted non-UTF-8 bytes. The new shared_cache_eligibility_preserves_binary_key_acceptance test failed at tests.rs:342 with assertion failed: from_slice::<RawKvEvent>(&encoded).is_err(). Both byte visitor methods now validate UTF-8, and the regression passes. Existing upstream deprecation, macOS unused-variable, and linker warnings remain unchanged.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+Do not omit false when serializing RawKvEvent: normalized raw events lose their original unknown extra keys, so omission can turn a negative decision into positive on decode. Normalized RouterEvent and PlacementEvent may omit false because their absence means false. Non-UTF-8 binary extra keys must stay rejected as on main; accepted UTF-8 binary keys retain existing GPU hash/namespace normalization but cannot establish shared-cache eligibility. Do not add eligibility back to KvCacheStoreData.
+
+## Codebase Discoveries
+The derived positional RawKvEvent serializer skips optional fields and does not match the vLLM positional decoder layout. Test batches therefore preserve the outer tuple and encode events as named maps. The enum field requires fixture updates across router, consolidator, and LLM tests. This atomic decoder slice is 517 changed lines; separating fixture updates would leave a non-compiling part.
+
+## Open Questions
+New follow-up PR publication remains subject to the user's standing GitHub restriction. Consumer activation is deferred to the consumer PR. No review replies were posted.
