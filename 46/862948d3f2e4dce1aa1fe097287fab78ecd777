@@ -18,4 +18,4 @@ Consumer activation belongs with the eventual consumer PR. LocalKvIndexer::new a
 Private from_primary is accessible to local.rs tests and can exercise a genuinely opted-in worker recovery dump without changing production defaults. Dump runs must split when eligibility changes while retaining parent continuity. Worker and data-parallel-rank provenance remain separate even when radix nodes are shared.
 
 ## Open Questions
-New follow-up PR publication remains subject to the user's standing GitHub restriction. The Mooncake consumer and its worker activation remain deferred. No review replies were posted.
+The user explicitly authorized creating the 2b and 2c PRs in the next turn. Publication will use dependent drafts against upstream main while #15260 remains open. The Mooncake consumer and its worker activation remain deferred. No review replies were posted.
