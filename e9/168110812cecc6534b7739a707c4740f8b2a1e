@@ -1,7 +1,9 @@
 ## Conversation
-The user approved splitting PR #15260 into 2a, 2b, and further parts as needed after review 5509904122. This commit is 2b, raw ZMQ eligibility classification, based only on 2a commit 560dfa22e8. Part 2c is an independent sibling follow-up.
+The user approved splitting PR #15260 into 2a, 2b, and further parts as needed after review 5509904122. This commit is 2b, raw ZMQ eligibility classification, based only on revised 2a commit 6fa671de30. Part 2c is an independent sibling follow-up.
 
 ## Actions
+On 2026-10-16, rebased this signed commit onto the 2a review follow-up 6fa671de30, which shortens normalized envelope serialization to sce and trims publisher test duplication. git range-diff confirms the 2b feature patch is unchanged; all 66 zmq_wire tests pass on the rebased branch. The original note was reattached after rewriting the commit.
+
 Extracted the raw decoder changes from preserved original 42b9b233f3 and adapted conversion to the event-envelope metadata from 2a. Classified map and tuple inputs before normalization erases extra keys. Retained explicit false on raw-event serialization. Updated raw-event fixtures and encoded synthetic events as named maps inside batch tuples. Added a failing binary-key regression before restoring rejection of non-UTF-8 binary keys in the byte visitor.
 All 66 zmq_wire tests passed. All targets of dynamo-kv-router, kvbm-consolidator, and dynamo-mocker compiled; their unit/integration suites passed 1638 tests, four ignored. The LLM kv_router:: suite passed 421 tests with --no-default-features and DYN_EVENT_PLANE_HOST=127.0.0.1. Formatting and whitespace checks passed. Full diff is 17 human-authored files, 506 additions and 11 deletions; most files only initialize the new raw field in existing fixtures. No generated files changed. Commitlint passed and commit uses -s -S.
 
