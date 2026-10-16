@@ -1,0 +1,21 @@
+## Conversation
+The user approved splitting PR #15260 into parts 2a, 2b, and further parts as needed after review 5509904122. This commit is 2c, opt-in recovery provenance, based only on 2a commit 560dfa22e8. Part 2b is an independent sibling and is not required by this commit.
+
+## Actions
+Extracted the radix-tree provenance implementation from preserved original 42b9b233f3, adapted it to the envelope flag, and retained the KvIndexer builder opt-in. Kept all worker and frontend production constructors off by default. Added an opted-in LocalKvIndexer recovery test using its private from_primary constructor without adding a production configuration API. Strengthened cleanup coverage by checking the per-worker/rank provenance map immediately after explicit and cascading removals, before any subsequent store.
+All 16 focused shared_cache tests passed. All targets of dynamo-kv-router, kvbm-consolidator, and dynamo-mocker compiled; their unit/integration suites passed 1638 tests, four ignored. Formatting and whitespace checks passed. Full diff is three human-authored files, 299 additions and seven deletions, no generated changes. Commitlint passed and commit uses -s -S.
+
+## Errors & Mistakes
+A mechanical extraction initially added an unused eligibility parameter to log_missing_parent as well as the intended provenance helper. The diff audit caught it before compilation and it was removed. A deliberate mutation disabled both provenance.remove calls in apply_removed: the new removal test failed with left [100, 200, 300] versus right [100, 200]. The cleanup calls were restored before the successful focused and full suites.
+
+## Dead Ends
+The original worker-side unconditional enablement and frontend gate are intentionally not restored: there is no production shared-cache consumer in this part, and enabling the per-block map would impose unnecessary cost. No new LocalKvIndexer public constructor was needed to validate the recovery path.
+
+## Hints for Future Agents
+Consumer activation belongs with the eventual consumer PR. LocalKvIndexer::new and new_with_delegate still use the default-off builder. Keep the direct map assertion before any later ineligible store so a missing removal cleanup cannot be masked. The external-to-local hash guard in dump restoration is intentional. Rebase this branch onto main after 2a merges; it does not depend on the raw decoder part 2b.
+
+## Codebase Discoveries
+Private from_primary is accessible to local.rs tests and can exercise a genuinely opted-in worker recovery dump without changing production defaults. Dump runs must split when eligibility changes while retaining parent continuity. Worker and data-parallel-rank provenance remain separate even when radix nodes are shared.
+
+## Open Questions
+The user explicitly authorized creating the 2b and 2c PRs in the next turn. Published part 2c as draft https://github.com/ai-dynamo/dynamo/pull/16432 against upstream main. It depends only on #15260 and currently includes its commit. Both follow-up branches and notes were pushed atomically to origin; the descriptions include the tracked issue, validation, incremental commit link, and dependency explanation. The Mooncake consumer and its worker activation remain deferred. No review replies were posted.
