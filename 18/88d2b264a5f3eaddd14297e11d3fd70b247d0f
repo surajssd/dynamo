@@ -1,7 +1,9 @@
 ## Conversation
-The user approved splitting PR #15260 into parts 2a, 2b, and further parts as needed after review 5509904122. This commit is 2c, opt-in recovery provenance, based only on 2a commit 560dfa22e8. Part 2b is an independent sibling and is not required by this commit.
+The user approved splitting PR #15260 into parts 2a, 2b, and further parts as needed after review 5509904122. This commit is 2c, opt-in recovery provenance, based only on revised 2a commit 6fa671de30. Part 2b is an independent sibling and is not required by this commit.
 
 ## Actions
+On 2026-10-16, rebased this signed commit onto the 2a review follow-up 6fa671de30, which shortens normalized envelope serialization to sce and trims publisher test duplication. git range-diff confirms the 2c feature patch is unchanged; all 16 shared_cache tests pass on the rebased branch. The original note was reattached after rewriting the commit.
+
 Extracted the radix-tree provenance implementation from preserved original 42b9b233f3, adapted it to the envelope flag, and retained the KvIndexer builder opt-in. Kept all worker and frontend production constructors off by default. Added an opted-in LocalKvIndexer recovery test using its private from_primary constructor without adding a production configuration API. Strengthened cleanup coverage by checking the per-worker/rank provenance map immediately after explicit and cascading removals, before any subsequent store.
 All 16 focused shared_cache tests passed. All targets of dynamo-kv-router, kvbm-consolidator, and dynamo-mocker compiled; their unit/integration suites passed 1638 tests, four ignored. Formatting and whitespace checks passed. Full diff is three human-authored files, 299 additions and seven deletions, no generated changes. Commitlint passed and commit uses -s -S.
 
