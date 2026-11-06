@@ -1,0 +1,31 @@
+## Conversation
+On 2026-11-05 the user asked to rebase and repush the existing PR series on current main. No review replies were requested.
+
+The user asked to fix Jon's three non-blocking notes in review 5550779722 on PR #15260. These concern serialized field size, consistent publisher metadata assignment, and duplicate coalescing/serialization test coverage. Earlier authorization to commit, push, update descriptions, and resolve addressed review conversations remains in scope. Do not post review replies.
+
+## Actions
+2026-11-05: Rebased both 2a commits onto upstream/main f01ff2b075bfad9a5cafd112cc644e05808265c6 with signed commits. Both patches are unchanged by git range-diff --no-notes. This head passed 1232 router library tests (three ignored) and 127 LLM publisher tests with --no-default-features and DYN_EVENT_PLANE_HOST=127.0.0.1. Formatting and whitespace checks passed. The complete PR is still nine human-authored files, 156 additions and 33 deletions. No generated files changed.
+
+Renamed only the normalized RouterEvent and PlacementEvent wire key to sce, preserving the shared_cache_eligible Rust name, false default, and skip-if-false behavior. Updated the existing compatibility test to require the short key and a five-byte named-MessagePack overhead for true, with no field for false. The test failed before the serde rename and passes after it. Changed both publisher metadata fields to direct assignment. Reduced the coalescing test to same/different eligibility and retained the public buffered-recovery assertion; removed its redundant MessagePack round trip.
+Validation: both residency_domain_compat tests passed; all dynamo-kv-router library tests passed (1081 passed, three ignored). The LLM publisher suite passed all 103 tests. The rebased 2b decoder suite passed all 66 tests and the rebased 2c shared-cache suite passed all 16 tests. git range-diff confirms both feature patches are unchanged, and git merge-tree confirms they still combine without conflicts. Formatting and whitespace checks passed. The fix changes two files, 14 additions and 14 deletions; the full PR remains nine human-authored files, 156 additions and 33 deletions. No generated files changed. Commitlint passed and commit uses -s -S.
+
+Published the fix and rebased sibling heads e916811081 (2b) and 1888d2b264 (2c) atomically with notes, using explicit remote-head leases. Updated the three PR descriptions and incremental commit links. GitHub verifies all three signatures. Resolved Jon's addressed threads PRRT_kwDOOCjvss6tSfql, PRRT_kwDOOCjvss6tSfqx, and PRRT_kwDOOCjvss6tSfq6 without posting review replies. CI restarted; no failures were reported at the final status check, and Rust jobs were still running.
+
+## Errors & Mistakes
+2026-11-05: The local cargo and rustc binaries are Homebrew Rust 1.99.1 even though rustup reports the repository override 1.96.1. Strict Clippy on 2a stopped on warnings in unchanged source, including deprecated fetch_update, async_trait double_must_use, chunks_exact_to_as_chunks, and result_large_err. No unrelated source was changed. Shared CARGO_TARGET_DIR initially reused the 2a test executable in the sibling worktrees: 2b reported 78 decoder tests and 2c reported 12 shared-cache tests, omitting their added tests. Those sibling results are invalid and superseded by clean crate builds. cargo test -p kvbm-consolidator failed because main removed the KVBM crates from its workspace in #16324.
+
+The expected pre-fix regression failed at protocols.rs:1950 with left false and right true because the writer still emitted the old long key. After adding serde rename to both envelopes, the compatibility and size assertions pass. Existing upstream deprecation and macOS warnings remain unchanged.
+
+## Dead Ends
+None.
+
+## Hints for Future Agents
+2026-11-05: Before validating a sibling worktree with the shared target directory, clear affected crate artifacts with cargo clean -p dynamo-kv-router (and -p dynamo-llm when checking LLM). Confirm the added tests appear in the executable; a fast successful Cargo run can be a stale sibling binary. The 2026-11-05 rebase backups are refs/backup/shared-cache-2a-before-20261105-rebase, refs/backup/shared-cache-2b-before-20261105-rebase, and refs/backup/shared-cache-2c-before-20261105-rebase.
+
+The long envelope key was introduced only in this unmerged PR, so no released-wire alias is needed. Legacy readers ignore sce and legacy events without it remain ineligible. Do not rename the RawKvEvent provenance key in part 2b as part of this fix; it belongs to the separate raw decoder and must explicitly serialize negative decisions. Both sibling follow-ups must inherit this revision without mixing their feature patches. Old sibling heads are protected by refs/backup/shared-cache-2b-before-jon-followup-ae18be61f9 and refs/backup/shared-cache-2c-before-jon-followup-46862948d3.
+
+## Codebase Discoveries
+A sce key plus a MessagePack boolean adds five bytes to the named RouterEvent map, down from the 23-byte long-key representation reported in review. The existing protocol compatibility test already owns named MessagePack coverage; the publisher test only needs publication and buffer preservation.
+
+## Open Questions
+All three requested 2a notes are addressed. Production consumer activation and the separate 2b review remain deferred. No review replies are authorized.
