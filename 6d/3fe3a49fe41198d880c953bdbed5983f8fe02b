@@ -54,7 +54,7 @@ Consumer activation belongs with the eventual consumer PR. LocalKvIndexer::new a
 Private from_primary is accessible to local.rs tests and can exercise a genuinely opted-in worker recovery dump without changing production defaults. Dump runs must split when eligibility changes while retaining parent continuity. Worker and data-parallel-rank provenance remain separate even when radix nodes are shared.
 
 ## Open Questions
-2026-11-17 current status supersedes historical entries below: the requested rebases and local validation are complete; the branches and refreshed descriptions are ready for publication. Fresh CI will run after push. Production shared-cache consumer activation remains deferred. The old #18175 failure has its merged upstream fix #18177 included. No additional review replies are authorized.
+2026-11-17 current status supersedes historical entries below: the requested rebases and local validation are complete; all three branches and notes were pushed atomically with expected-head leases, and the PR descriptions are updated. GitHub reports the expected new heads as mergeable, verifies all four signatures, and has fresh checks queued or in progress. Parts 2b and 2c remain drafts. Production shared-cache consumer activation remains deferred. The old #18175 failure has its merged upstream fix #18177 included. No additional review replies are authorized.
 
 2026-11-05 evening: The permanent fix for the reported CI failure is awaiting merge in #18177. Fresh Pre Merge runs are 42142045870 (2a), 42142043995 (2b), and 42142044924 (2c). The shared-cache patches remain unchanged, and no review replies or approval comments were posted.
 
