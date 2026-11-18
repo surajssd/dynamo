@@ -1,0 +1,20 @@
+## Conversation
+The user asked whether PR #18923's failed pipeline was caused by the PR or a flake. Both architecture jobs failed the existing I2V pixel-limit test because it expected InvalidArgument after the shared loader began returning a typed HTTP 413. The user requested the correction and all tests, then explicitly asked to commit and push while the remaining backend verification was being prepared.
+
+## Actions
+Read the CI logs for both failed architectures and compared three recent main runs. The exact failing test passes on main and repeatedly fails on this PR. Read the Omni handler, existing I2V tests, loader, repository test guidance, and previous commit history. Changed only TestI2VEngineInputs.test_reference_exceeding_pixel_limit_rejected to assert HttpStatusError, status 413, and the exact safe message. Kept the Pillow cause and engine-not-called assertions. All 116 image-loader cases, all 90 bindings Rust unit tests, and all 28 HTTP server cases passed. HTTP cases ran in fresh processes with real isolated etcd and NATS services. The focused pre-commit checks passed. Audited the complete five-file PR diff (179 additions, five deletions) and found no untracked deliverables or generated source changes. Validated the Conventional Commit message, signed off and signed the commit. Downloaded a published Linux arm64 runtime pinned at sha256:f5ac09ff517f19ed9e24a5b4b0d84bf6d0269c15a615ec171e4ef2044142b348 for the remaining backend run.
+
+## Errors & Mistakes
+The previous local verification omitted the existing vLLM Omni caller test, although the shared loader's exception type changed. A complete macOS multimodal-directory run produced 416 passes, 28 failures due to unavailable CUDA, NIXL, or vLLM dependencies, and 21 skips. Those environment failures are not reported as passes. GitHub denied access to the private CI registry variables with HTTP 403, so the Linux fallback uses a pinned published nightly rather than claiming the exact private CI image was verified. A shell glob for workflow filenames matched nothing and aborted that read; subsequent searches used rg --files.
+
+## Dead Ends
+Running GPU/NIXL/vLLM-specific cases in the macOS venv cannot supply backend coverage. The published Linux runtime is being used to obtain real backend dependencies rather than skipping the caller test. Private CI registry metadata was unavailable to the current GitHub credentials.
+
+## Hints for Future Agents
+Do not restore the old InvalidArgument expectation. The loader's typed HTTP 413 intentionally propagates through Omni I2V admission, with the Pillow error retained as its cause and no engine work started. On macOS, run native-runtime HTTP tests in fresh processes with pytest-forked disabled, register its marker explicitly, and use the bindings tests' own conftest to start isolated etcd/NATS. Full PR CI is SHA-scoped; the previous maintainer approval covered 20c91149ac067ed697b01cec1d251fd0caeeedc7 only.
+
+## Codebase Discoveries
+The I2V handler previously caught the raw Pillow DecompressionBombError and wrapped it as InvalidArgument. The shared loader now raises HttpStatusError earlier, so the handler preserves the typed 413. The corresponding image-edit test already expects status 413. The full HTTP server file has 28 cases, and the bindings Rust unit target has 90 tests. The installed native Python extension is a separate copy outside the Cargo target directory. After all Rust tests passed, the generated Cargo cache from this session was removed to make space for the Linux runtime image.
+
+## Open Questions
+The Linux vLLM/Omni backend run is pending at commit time. The full CPU/GPU pipeline needs approval of the updated head unless the repository grants automatic approval. No claim is made that every repository or GPU test has passed.
