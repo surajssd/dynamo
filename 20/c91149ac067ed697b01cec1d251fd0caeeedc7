@@ -1,0 +1,20 @@
+## Conversation
+The user supplied PR #18923 review comment discussion_r4619776747, which questions the image-specific HTTP 413 guard in the public-message allowlist. After discussing the redundant condition, the user approved removing the guard, updating tests, and correcting the PR description. Earlier instructions authorize committing and pushing the PR changes.
+
+## Actions
+Read the review, existing message allowlist, image producers, HTTP/SSE renderers, repository guidance, and commit notes. Updated the Rust unit test and the HTTP/SSE expectations first. Both status-400 HTTP/SSE cases failed against the previous native bindings because the public message was suppressed. Removed the additional image/status condition while retaining exact allowlist matching. Ran cargo fmt for the bindings crate. Rebuilt and installed the editable runtime with maturin develop --uv --locked. All eight HTTP/SSE cases then passed in fresh processes. Built the Rust test runner with cargo rustc --lib --tests --profile test and per-target libpython linker arguments; all nine errors::tests:: cases passed. Final pre-commit and diff whitespace checks passed. Audited the complete four-file PR diff against the upstream merge base (176 additions, three deletions), with no untracked deliverables or generated source changes. Prepared the corrected PR description and validated the Conventional Commit message.
+
+## Errors & Mistakes
+Using Python 3.12 HTTPStatus(413).phrase in the response assertion expected Request Entity Too Large, while Dynamo returns Payload Too Large. Replaced that derived expectation with the existing explicit Dynamo type strings for statuses 400 and 413; all eight cases passed. The first Rust test-runner lookup assumed target/debug/deps, which does not exist with the installed Cargo 1.100 artifact layout. It reported No compiled Rust test binary found. The actual executable is under target/debug/build/dynamo-py3/<hash>/out/.
+
+## Dead Ends
+Deriving Dynamo error type strings from Python HTTPStatus was abandoned because the versioned libraries use different names for status 413. Looking for the unit test binary in the older Cargo deps directory was abandoned after inspecting the artifact layout.
+
+## Hints for Future Agents
+The earlier note requiring status 413 for this public message is superseded by review discussion_r4619776747 and this commit. Exact safe-message matching controls publication; image loaders continue to produce status 413. Preserve privacy checks for diagnostic suffixes and unrelated messages. On macOS, run each native-runtime HTTP case in a fresh process with --noconftest -p no:forked, PYTHONPATH=components/src, and an explicitly registered forked marker. For Rust tests, link libpython only into the test target through cargo rustc arguments instead of changing RUSTFLAGS. Use the venv Python sysconfig LIBDIR to locate libpython.
+
+## Codebase Discoveries
+The existing video public-message allowlist already has no status-specific condition. The same exact image text can be public at statuses 400 and 413 without changing either semantic status or exposing decoder details. The installed Cargo 1.100 puts the Rust unit executable under target/debug/build/dynamo-py3/<hash>/out/ rather than target/debug/deps.
+
+## Open Questions
+None
