@@ -1,0 +1,143 @@
+## Conversation
+
+The user requested retention of the commit notes after PR #18923 was squash-merged. The original note bodies are preserved below, grouped by section and source commit. Those entries describe historical states; the final state is recorded first in each relevant section.
+
+### Historical note from b43faf055127f563fd6100eeb8a2d243b818f18d
+
+The user requested a narrow fix for image hard-limit errors and regression coverage, then asked for pull requests when the code was ready. This branch targets upstream Dynamo and contains no deployment-specific or customer content.
+
+### Historical note from 8062e5e7f047da3fd720a8891854575e835fe84e
+
+The user asked to assess PR #18923 review comment discussion_r4603681090 about duplicated SSE parsing, then explicitly requested the change, commit, and push.
+
+### Historical note from 20c91149ac067ed697b01cec1d251fd0caeeedc7
+
+The user supplied PR #18923 review comment discussion_r4619776747, which questions the image-specific HTTP 413 guard in the public-message allowlist. After discussing the redundant condition, the user approved removing the guard, updating tests, and correcting the PR description. Earlier instructions authorize committing and pushing the PR changes.
+
+### Historical note from 672858a13fec6de637c2bfd8144863c336b159a6
+
+The user asked whether PR #18923's failed pipeline was caused by the PR or a flake. Both architecture jobs failed the existing I2V pixel-limit test because it expected InvalidArgument after the shared loader began returning a typed HTTP 413. The user requested the correction and all tests, then explicitly asked to commit and push while the remaining backend verification was being prepared.
+
+## Actions
+
+PR #18923 merged on 2026-11-18 at 22:35:05 UTC as 2f2c018558b68eb4a3efe08e611d63d1903a2112. Full CI run 44404119059 completed successfully, with 77 successful checks and 44 skipped checks. All review threads were resolved. All four original commit annotations remain unchanged. This consolidated annotation also retains their contents on the merged commit.
+
+### Historical note from b43faf055127f563fd6100eeb8a2d243b818f18d
+
+Read the loader and its callers, exception bridge, HTTP/SSE renderers, existing tests, repository guidance, history, and available notes. Added eight real-Pillow hard-limit cases before the loader change and observed eight failures. Added the shared-boundary catch, exact public-message entry, status guard, and tests. The loader file passed 116 cases. The native bridge unit test passed. Rebuilt the Python runtime with Maturin and verified eight HTTP/SSE cases in isolated processes, covering exact public text, diagnostic suffixes, unrelated text, and mismatched status. Ran cargo fmt and pre-commit checks. Audited four human-authored files with 185 additions and four deletions against the upstream merge base. Production code accounts for 14 additions and three deletions. Validated the Conventional Commit message and signed off and signed the commit.
+
+### Historical note from 8062e5e7f047da3fd720a8891854575e835fe84e
+
+Read the review comment, existing SSE helper, affected response test, repository test guidance, and previous commit note. Replaced the separate body parsing and error extraction with error = _sse_error(raw) if stream else json.loads(raw). All eight HTTP/SSE response cases passed in separate Python processes. Pre-commit checks and git diff --check passed. Inspected the complete four-file PR diff against the upstream merge base and checked for untracked files. Validated the Conventional Commit message and created a signed, signed-off commit.
+
+### Historical note from 20c91149ac067ed697b01cec1d251fd0caeeedc7
+
+Read the review, existing message allowlist, image producers, HTTP/SSE renderers, repository guidance, and commit notes. Updated the Rust unit test and the HTTP/SSE expectations first. Both status-400 HTTP/SSE cases failed against the previous native bindings because the public message was suppressed. Removed the additional image/status condition while retaining exact allowlist matching. Ran cargo fmt for the bindings crate. Rebuilt and installed the editable runtime with maturin develop --uv --locked. All eight HTTP/SSE cases then passed in fresh processes. Built the Rust test runner with cargo rustc --lib --tests --profile test and per-target libpython linker arguments; all nine errors::tests:: cases passed. Final pre-commit and diff whitespace checks passed. Audited the complete four-file PR diff against the upstream merge base (176 additions, three deletions), with no untracked deliverables or generated source changes. Prepared the corrected PR description and validated the Conventional Commit message.
+
+### Historical note from 672858a13fec6de637c2bfd8144863c336b159a6
+
+Read the CI logs for both failed architectures and compared three recent main runs. The exact failing test passes on main and repeatedly fails on this PR. Read the Omni handler, existing I2V tests, loader, repository test guidance, and previous commit history. Changed only TestI2VEngineInputs.test_reference_exceeding_pixel_limit_rejected to assert HttpStatusError, status 413, and the exact safe message. Kept the Pillow cause and engine-not-called assertions. All 116 image-loader cases, all 90 bindings Rust unit tests, and all 28 HTTP server cases passed. HTTP cases ran in fresh processes with real isolated etcd and NATS services. The focused pre-commit checks passed. Audited the complete five-file PR diff (179 additions, five deletions) and found no untracked deliverables or generated source changes. Validated the Conventional Commit message, signed off and signed the commit. Downloaded a published Linux arm64 runtime pinned at sha256:f5ac09ff517f19ed9e24a5b4b0d84bf6d0269c15a615ec171e4ef2044142b348 for the remaining backend run.
+
+After pushing at the user's request, ran the complete Omni test directory in the pinned published Linux arm64 runtime: 713 passed in 14.32 seconds. Installed the repository test and planner requirements into that disposable container and ran the complete CI CPU selection with pre_merge and vllm and gpu_0 and not e2e: 3473 passed, 18 skipped, no failures or collection errors in 49.77 seconds. The 18 skips cover optional non-vLLM/GPU/diagnostic-wheel cases, four MinIO cases without an endpoint, and the existing disabled worker-handler cases.
+
+## Errors & Mistakes
+
+None during retention. Earlier implementation and validation mistakes are preserved in the historical entries below.
+
+### Historical note from b43faf055127f563fd6100eeb8a2d243b818f18d
+
+A direct cargo build reached linking and failed with ld: symbol(s) not found for architecture arm64. Maturin supplied the Python extension linker settings and succeeded. pytest-forked on macOS exited with status 3 for these runtime tests; running each case in its own fresh Python process with the forked plugin disabled passed. The first subprocess collector used a basename node ID and failed with file or directory not found; prefixing the test module path corrected it. A synchronous pixel-load sentinel initially used AsyncMock; it now uses Mock so reaching pixel loading raises immediately.
+
+### Historical note from 8062e5e7f047da3fd720a8891854575e835fe84e
+
+Initial pytest collection failed with ModuleNotFoundError: No module named 'dynamo.frontend'. Setting PYTHONPATH=components/src resolved that import. Disabling pytest-forked then caused 'forked' not found in `markers` configuration option. Removing strict-marker options still failed because PytestUnknownMarkWarning is treated as an error. The successful invocation preserved repository options and appended the forked marker to the configured marker list. The first combined commit command was rejected before execution because its temporary-file cleanup used rm -f; the retry omitted that cleanup. Commitlint rejected the initial body with body's lines must not be longer than 100 characters [body-max-line-length]; wrapping the body fixed it.
+
+### Historical note from 20c91149ac067ed697b01cec1d251fd0caeeedc7
+
+Using Python 3.12 HTTPStatus(413).phrase in the response assertion expected Request Entity Too Large, while Dynamo returns Payload Too Large. Replaced that derived expectation with the existing explicit Dynamo type strings for statuses 400 and 413; all eight cases passed. The first Rust test-runner lookup assumed target/debug/deps, which does not exist with the installed Cargo 1.100 artifact layout. It reported No compiled Rust test binary found. The actual executable is under target/debug/build/dynamo-py3/<hash>/out/.
+
+### Historical note from 672858a13fec6de637c2bfd8144863c336b159a6
+
+The previous local verification omitted the existing vLLM Omni caller test, although the shared loader's exception type changed. A complete macOS multimodal-directory run produced 416 passes, 28 failures due to unavailable CUDA, NIXL, or vLLM dependencies, and 21 skips. Those environment failures are not reported as passes. GitHub denied access to the private CI registry variables with HTTP 403, so the Linux fallback uses a pinned published nightly rather than claiming the exact private CI image was verified. A shell glob for workflow filenames matched nothing and aborted that read; subsequent searches used rg --files.
+
+The published serving runtime initially lacked pytest-benchmark and other test plugins, so the first pytest collection failed; installing container/deps/requirements.test.txt resolved that setup gap. The first broad Linux CPU run passed 3473 cases but had 94 collection errors from missing planner dependencies. The planner dependencies were installed at repository constraints; an intermediate unpinned dependency installation was corrected to the repository's kubernetes, scikit-learn, plotext, and pydantic constraints before the final successful run.
+
+## Dead Ends
+
+None during retention. Earlier abandoned approaches are preserved below.
+
+### Historical note from b43faf055127f563fd6100eeb8a2d243b818f18d
+
+Direct cargo build was replaced by the repository's Maturin workflow. Forking an initialized native runtime on macOS was replaced by isolated test processes for local verification. Linux CI retains the existing forked test convention.
+
+### Historical note from 8062e5e7f047da3fd720a8891854575e835fe84e
+
+Relaxing strict-marker options was abandoned. Explicitly registering the disabled plugin's forked marker preserved the repository's warning and strict-marker checks.
+
+### Historical note from 20c91149ac067ed697b01cec1d251fd0caeeedc7
+
+Deriving Dynamo error type strings from Python HTTPStatus was abandoned because the versioned libraries use different names for status 413. Looking for the unit test binary in the older Cargo deps directory was abandoned after inspecting the artifact layout.
+
+### Historical note from 672858a13fec6de637c2bfd8144863c336b159a6
+
+Running GPU/NIXL/vLLM-specific cases in the macOS venv cannot supply backend coverage. The published Linux runtime is being used to obtain real backend dependencies rather than skipping the caller test. Private CI registry metadata was unavailable to the current GitHub credentials.
+
+## Hints for Future Agents
+
+Use this merged commit to discover the retained history. The final public-message mechanism uses the existing exact-text allowlist without an image-specific status guard; earlier requirements for a 413-only guard are superseded. Image loaders still raise typed HTTP 413 for the pixel limit. The I2V regression expects HttpStatusError, status 413, the safe message, the Pillow cause, and no engine admission. The earlier missing-tracking-issue note is superseded by issue #18942.
+
+### Historical note from b43faf055127f563fd6100eeb8a2d243b818f18d
+
+Keep the exact public sentence Image exceeds the decoded pixel limit. Only status 413 may expose it. A prefixed diagnostic message must remain private, and the existing Unsupported video media allowlist behavior must stay unchanged. The HTTP-only fixture reuses the existing mock-server lifecycle with file discovery, TCP, and ZMQ events, so selected tests run without outer conftests or external NATS/etcd services. On macOS, run each HTTP case in a fresh process with -p no:forked.
+
+### Historical note from 8062e5e7f047da3fd720a8891854575e835fe84e
+
+On macOS, run each native-runtime HTTP case in a fresh process with --noconftest -p no:forked and PYTHONPATH=components/src. Read the repository marker list from pyproject.toml and append forked when disabling that plugin. The dedicated pixel-limit fixture uses file discovery, TCP requests, and ZMQ events, so these eight cases do not require NATS or etcd.
+
+### Historical note from 20c91149ac067ed697b01cec1d251fd0caeeedc7
+
+The earlier note requiring status 413 for this public message is superseded by review discussion_r4619776747 and this commit. Exact safe-message matching controls publication; image loaders continue to produce status 413. Preserve privacy checks for diagnostic suffixes and unrelated messages. On macOS, run each native-runtime HTTP case in a fresh process with --noconftest -p no:forked, PYTHONPATH=components/src, and an explicitly registered forked marker. For Rust tests, link libpython only into the test target through cargo rustc arguments instead of changing RUSTFLAGS. Use the venv Python sysconfig LIBDIR to locate libpython.
+
+### Historical note from 672858a13fec6de637c2bfd8144863c336b159a6
+
+Do not restore the old InvalidArgument expectation. The loader's typed HTTP 413 intentionally propagates through Omni I2V admission, with the Pillow error retained as its cause and no engine work started. On macOS, run native-runtime HTTP tests in fresh processes with pytest-forked disabled, register its marker explicitly, and use the bindings tests' own conftest to start isolated etcd/NATS. Full PR CI is SHA-scoped; the previous maintainer approval covered 20c91149ac067ed697b01cec1d251fd0caeeedc7 only.
+
+## Codebase Discoveries
+
+The squash-merge commit initially had no note, while all four original branch commits had notes. Notes are backed up to the fork's origin remote under refs/notes/commits. A clone can retrieve them with git fetch origin 'refs/notes/*:refs/notes/*'. Local verification passed all 713 Omni cases, the full vLLM CPU selection (3473 passed, 18 skipped), all 116 image-loader cases, all 28 HTTP server cases, all 90 bindings Rust unit tests, and pre-commit checks.
+
+### Historical note from b43faf055127f563fd6100eeb8a2d243b818f18d
+
+Pillow raises DecompressionBombError during Image.open, before a post-open max_pixels check can run. Catching at the common open boundary covers inline, fetched, and shared-cache bytes and preserves the existing batch error precedence. Unary Dynamo errors use a flat message/type/code object, while SSE nests the error and uses invalid_request_error as its type. The existing HTTP renderer mechanism is already on the upstream base through PR 18343.
+
+### Historical note from 8062e5e7f047da3fd720a8891854575e835fe84e
+
+_sse_error returns the nested error object from the first SSE data frame carrying an error and skips other frames and [DONE]. Unary responses already provide the error object directly. Reusing the helper preserves every existing status, public-message, and privacy assertion.
+
+### Historical note from 20c91149ac067ed697b01cec1d251fd0caeeedc7
+
+The existing video public-message allowlist already has no status-specific condition. The same exact image text can be public at statuses 400 and 413 without changing either semantic status or exposing decoder details. The installed Cargo 1.100 puts the Rust unit executable under target/debug/build/dynamo-py3/<hash>/out/ rather than target/debug/deps.
+
+### Historical note from 672858a13fec6de637c2bfd8144863c336b159a6
+
+The I2V handler previously caught the raw Pillow DecompressionBombError and wrapped it as InvalidArgument. The shared loader now raises HttpStatusError earlier, so the handler preserves the typed 413. The corresponding image-edit test already expects status 413. The full HTTP server file has 28 cases, and the bindings Rust unit target has 90 tests. The installed native Python extension is a separate copy outside the Cargo target directory. After all Rust tests passed, the generated Cargo cache from this session was removed to make space for the Linux runtime image.
+
+## Open Questions
+
+None for note retention or the upstream PR. The historical entries below include pending CI and merge questions that are now resolved by the successful full CI run and merge. Runtime-image and deployment qualification remain separate work.
+
+### Historical note from b43faf055127f563fd6100eeb8a2d243b818f18d
+
+Upstream PR 13190 overlaps this rejection but also adds configurable limits and handles the exception in caller branches. This branch keeps existing policy and adds the reviewed public-message path. No matching standalone tracking issue was found; a draft PR must identify that missing issue before it becomes ready for merge. This branch has no deployment or live-model qualification claim.
+
+### Historical note from 8062e5e7f047da3fd720a8891854575e835fe84e
+
+None
+
+### Historical note from 20c91149ac067ed697b01cec1d251fd0caeeedc7
+
+None
+
+### Historical note from 672858a13fec6de637c2bfd8144863c336b159a6
+
+The complete local vLLM CPU selection and Omni suite pass. Full GPU/multi-backend CI has not run for 672858a13fec6de637c2bfd8144863c336b159a6. The approval workflow completed without granting approval; pull-request/18923 still points at 20c91149ac067ed697b01cec1d251fd0caeeedc7. A maintainer must approve the new SHA unless repository eligibility changes. No claim is made that every repository or GPU test has passed.
